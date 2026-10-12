@@ -1,0 +1,299 @@
+{
+    "Items": [
+        {
+            "name": "Жөн эле сөздөр",
+            "packs": [
+                {
+                    "title": "Биринчи деңгээл",
+                    "maxletters": 4,
+                    "levels": [
+                        {
+                            "bonus": false,
+                            "letters": "т,о,к,о",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "от,ок,ток,тоо,тоок",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ч,а,а,к",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ак,ач,кач,акча,чака",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ж,т,е,и",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ит,же,жет,жети",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "н,р,у,о",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "он,ор,ун,нур,орун",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "а,р,ы,с",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ар,ыр,сыр,сары,ырас",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "а,т,а,к",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "кат,так,ата,атак,така",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ж,а,н,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "жан,жаа,жана,жаан",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "д,р,о,о",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ор,оор,доо,доор,ордо",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "а,ш,р,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ар,аш,шар,шаар,ашар",
+                            "additional_words": ""
+                        }
+                    ]
+                },
+                {
+                    "title": "Экинчи деңгээл",
+                    "maxletters": 5,
+                    "levels": [
+                        {
+                            "bonus": false,
+                            "letters": "б,с,а,к,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "бас,сак,аба,бак,сабак",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ы,к,ш,а,к",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ыш,кыш,каш,ашык,кашык",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "з,и,б,с,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "из,биз,бас,сиз,сабиз",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ү,р,с,т,ө",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "үр,өрт,сүр,төр,сүрөт",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "л,а,м,с,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ал,мал,сал,алас,салам",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "з,а,г,к,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "аз,газ,ага,каз,кагаз",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "т,а,а,к,ч",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ата,кат,така,ката,чатак",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "ш,ы,м,к,ы",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ыш,шым,кыш,шык,мышык",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "р,ө,к,ү,к",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "өр,үр,көр,үрк,күрөк",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "й,а,т,к,ы",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ай,тай,так,кыт,кытай",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "к,а,м,т,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "там,кат,кама,тамак,макта",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "к,а,л,м,е",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ак,ал,кем,кал,калем",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "р,ө,м,к,ү",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "өр,көм,көр,өмүр,көмүр",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "р,ы,х,т,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ыр,ах,тар,ары,тарых",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "н,а,с,а,м",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "сан,наам,асман,саман,манас",
+                            "additional_words": ""
+                        }
+                    ]
+                },
+                {
+                    "title": "Үчүнчү деңгээл",
+                    "maxletters": 6,
+                    "levels": [
+                        {
+                            "bonus": false,
+                            "letters": "б,т,а,к,е,н",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "кен,бат,танк,батек,баткен",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "а,к,а,р,т,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "ара,кара,тарак,карта,карата",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "д,н,а,к,а,й",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "кан,нак,анда,айна,кандай",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "т,у,б,а,ы,к",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "кат,бак,бут,бакыт,убакыт",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "б,т,ү,р,к,ү",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "күт,бүт,түрк,түкүр,бүркүт",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "к,ч,и,т,е,п",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "кеч,кит,ичке,китеп,тепкич",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "б,т,а,ш,к,ы",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "баш,кыш,каш,шыбак,баштык",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "к,й,м,а,к,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "май,аймак,майка,камак,каймак",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "п,а,л,к,к,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "алп,капа,калп,калак,калпак",
+                            "additional_words": ""
+                        },
+                        {
+                            "bonus": false,
+                            "letters": "з,а,т,р,а,а",
+                            "additional_letters": "",
+                            "solved_words": "",
+                            "words": "тар,аза,таза,азар,тараза",
+                            "additional_words": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
