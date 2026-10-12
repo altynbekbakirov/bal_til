@@ -23,6 +23,7 @@ class WordConnectPlaying extends WordConnectState {
   final WordGame1Level level;
   final List<String> currentLetters;
   final Set<String> solvedWords;
+  final Map<String, Set<int>> hintedLetters;
   final String currentAttempt;
   final WordFeedback feedback;
   final bool isCompleted;
@@ -34,6 +35,7 @@ class WordConnectPlaying extends WordConnectState {
     required this.level,
     required this.currentLetters,
     required this.solvedWords,
+    this.hintedLetters = const {},
     this.currentAttempt = '',
     this.feedback = const WordFeedback(),
     this.isCompleted = false,
@@ -45,6 +47,7 @@ class WordConnectPlaying extends WordConnectState {
     WordGame1Level? level,
     List<String>? currentLetters,
     Set<String>? solvedWords,
+    Map<String, Set<int>>? hintedLetters,
     String? currentAttempt,
     WordFeedback? feedback,
     bool? isCompleted,
@@ -56,6 +59,7 @@ class WordConnectPlaying extends WordConnectState {
       level: level ?? this.level,
       currentLetters: currentLetters ?? this.currentLetters,
       solvedWords: solvedWords ?? this.solvedWords,
+      hintedLetters: hintedLetters ?? this.hintedLetters,
       currentAttempt: currentAttempt ?? this.currentAttempt,
       feedback: feedback ?? this.feedback,
       isCompleted: isCompleted ?? this.isCompleted,
@@ -101,6 +105,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       level: level,
       currentLetters: List.from(level.letters),
       solvedWords: {},
+      hintedLetters: {},
       currentAttempt: '',
       feedback: const WordFeedback(),
       isCompleted: false,
@@ -112,17 +117,6 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       final s = state as WordConnectPlaying;
       emit(s.copyWith(
         currentAttempt: word,
-        feedback: const WordFeedback(),
-      ));
-    }
-  }
-
-  void appendLetter(String letter) {
-    if (state is WordConnectPlaying) {
-      final s = state as WordConnectPlaying;
-      final newAttempt = s.currentAttempt + letter;
-      emit(s.copyWith(
-        currentAttempt: newAttempt,
         feedback: const WordFeedback(),
       ));
     }
@@ -201,16 +195,50 @@ class WordConnectCubit extends Cubit<WordConnectState> {
   void giveHint() {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
-    final unsolved = s.level.words.where((w) => !s.solvedWords.contains(w)).toList();
-    if (unsolved.isEmpty) return;
+
+    final unsolvedWords = s.level.words.where((w) => !s.solvedWords.contains(w)).toList();
+    if (unsolvedWords.isEmpty) return;
+
+    final List<MapEntry<String, int>> unhinted = [];
+    for (final word in unsolvedWords) {
+      final alreadyHinted = s.hintedLetters[word] ?? {};
+      for (int i = 0; i < word.length; i++) {
+        if (!alreadyHinted.contains(i)) {
+          unhinted.add(MapEntry(word, i));
+        }
+      }
+    }
+
+    if (unhinted.isEmpty) return;
+
+    final choice = unhinted.first;
+    final word = choice.key;
+    final letterIdx = choice.value;
 
     AudioController.instance.playHint();
-    final target = unsolved.first;
+
+    final newHintedMap = Map<String, Set<int>>.from(s.hintedLetters);
+    final wordHints = Set<int>.from(newHintedMap[word] ?? {})..add(letterIdx);
+    newHintedMap[word] = wordHints;
+
+    final newSolved = Set<String>.from(s.solvedWords);
+    if (wordHints.length >= word.length) {
+      newSolved.add(word);
+    }
+
+    final isAllSolved = newSolved.length >= s.level.words.length;
+    if (isAllSolved) {
+      AudioController.instance.playLevelComplete();
+    }
+
     emit(s.copyWith(
+      hintedLetters: newHintedMap,
+      solvedWords: newSolved,
       feedback: WordFeedback(
-        text: 'Кеңеш: биринчи тамгасы «${target[0].toUpperCase()}» (${target.length} тамга)',
+        text: 'Кеңеш: «${word[letterIdx].toUpperCase()}» тамгасы ачылды!',
         type: FeedbackType.warning,
       ),
+      isCompleted: isAllSolved,
     ));
   }
 
@@ -230,4 +258,3 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     }
   }
 }
-

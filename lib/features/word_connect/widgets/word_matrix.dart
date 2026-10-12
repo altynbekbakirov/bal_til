@@ -4,11 +4,13 @@ import '../../../core/theme/app_theme.dart';
 class WordMatrix extends StatelessWidget {
   final List<String> targetWords;
   final Set<String> solvedWords;
+  final Map<String, Set<int>> hintedLetters;
 
   const WordMatrix({
     super.key,
     required this.targetWords,
     required this.solvedWords,
+    this.hintedLetters = const {},
   });
 
   @override
@@ -55,21 +57,44 @@ class WordMatrix extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(word.length, (idx) {
+                  final isHinted = hintedLetters[word]?.contains(idx) ?? false;
+                  String displayLetter = '';
+                  Color boxBg;
+                  Color boxBorder;
+                  Color textColor;
+
+                  if (isSolved) {
+                    displayLetter = word[idx].toUpperCase();
+                    boxBg = Colors.white.withValues(alpha: 0.2);
+                    boxBorder = Colors.transparent;
+                    textColor = Colors.white;
+                  } else if (isHinted) {
+                    displayLetter = word[idx].toUpperCase();
+                    boxBg = AppTheme.sunnyYellow.withValues(alpha: 0.3);
+                    boxBorder = AppTheme.primaryAmber;
+                    textColor = AppTheme.primaryDarkAmber;
+                  } else {
+                    boxBg = const Color(0xFFF8FAFC);
+                    boxBorder = const Color(0xFFE2E8F0);
+                    textColor = const Color(0xFF94A3B8);
+                  }
+
                   return Container(
                     width: 32,
                     height: 36,
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isSolved ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFF8FAFC),
+                      color: boxBg,
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: boxBorder, width: isHinted && !isSolved ? 1.5 : 1),
                     ),
                     child: Text(
-                      isSolved ? word[idx].toUpperCase() : '',
+                      displayLetter,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isSolved ? Colors.white : const Color(0xFF94A3B8),
+                        color: textColor,
                       ),
                     ),
                   );

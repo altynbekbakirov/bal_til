@@ -81,6 +81,7 @@ class _WordConnectView extends StatelessWidget {
                         child: WordMatrix(
                           targetWords: state.level.words,
                           solvedWords: state.solvedWords,
+                          hintedLetters: state.hintedLetters,
                         ),
                       ),
                     ),
@@ -409,4 +410,5 @@ class _CircleActionButton extends StatelessWidget {
     );
   }
 }
+
 
