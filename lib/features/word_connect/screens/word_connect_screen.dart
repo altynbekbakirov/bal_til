@@ -31,7 +31,7 @@ class _WordConnectView extends StatelessWidget {
           builder: (context, state) {
             if (state is WordConnectPlaying) {
               return Text(
-                '${state.packs[state.packIndex].title} • Деңгээл ${state.levelIndex + 1}',
+                '${state.packs[state.packIndex].title} • ${state.levelIndex + 1}-деңгээл',
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
               );
             }
@@ -45,6 +45,16 @@ class _WordConnectView extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF1E293B), size: 26),
+            tooltip: 'Кантип ойноо керек?',
+            onPressed: () {
+              AudioController.instance.playButtonClick();
+              _showHowToPlayDialog(context);
+            },
+          ),
+        ],
       ),
       body: BlocConsumer<WordConnectCubit, WordConnectState>(
         listener: (context, state) {
@@ -60,7 +70,7 @@ class _WordConnectView extends StatelessWidget {
             return SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   // Word Slots
                   Expanded(
                     flex: 4,
@@ -75,65 +85,236 @@ class _WordConnectView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Currently dragged word preview banner
+
+                  // Attempt Preview & Feedback Banner
                   Container(
-                    height: 48,
+                    height: 52,
                     alignment: Alignment.center,
-                    child: state.currentAttempt.isNotEmpty
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryAmber,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryAmber.withValues(alpha: 0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              state.currentAttempt.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 2.0,
-                              ),
-                            ),
-                          ).animate().scale(duration: 150.ms)
-                        : const SizedBox.shrink(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildFeedbackOrAttempt(state, context),
                   ),
-                  const SizedBox(height: 10),
-                  // Circular Word Wheel
+
+                  const SizedBox(height: 6),
+
+                  // Action Buttons + Circular Word Wheel
                   Expanded(
                     flex: 5,
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: 1.0,
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: WordWheel(
-                            letters: state.level.letters,
-                            onWordChanged: (word) {
-                              context.read<WordConnectCubit>().updateAttempt(word);
-                            },
-                            onWordCompleted: () {
-                              context.read<WordConnectCubit>().submitAttempt();
-                            },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Shuffle button
+                          _CircleActionButton(
+                            icon: Icons.shuffle_rounded,
+                            tooltip: 'Аралаштыруу',
+                            onTap: () => context.read<WordConnectCubit>().shuffleLetters(),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          // Wheel
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1.0,
+                              child: WordWheel(
+                                letters: state.currentLetters,
+                                onWordChanged: (word) {
+                                  context.read<WordConnectCubit>().updateAttempt(word);
+                                },
+                                onWordCompleted: () {
+                                  context.read<WordConnectCubit>().submitAttempt();
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Hint button
+                          _CircleActionButton(
+                            icon: Icons.lightbulb_outline_rounded,
+                            tooltip: 'Кеңеш',
+                            onTap: () => context.read<WordConnectCubit>().giveHint(),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+
+                  // Tap mode actions if letters entered
+                  if (state.currentAttempt.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              AudioController.instance.playButtonClick();
+                              context.read<WordConnectCubit>().clearAttempt();
+                            },
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            label: const Text('Тазалоо'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF64748B),
+                              side: const BorderSide(color: Color(0xFFCBD5E1)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          ElevatedButton.icon(
+                            onPressed: () => context.read<WordConnectCubit>().submitAttempt(),
+                            icon: const Icon(Icons.check_rounded, size: 18),
+                            label: const Text('Текшерүү'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryAmber,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 16),
                 ],
               ),
             );
           }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+
+  Widget _buildFeedbackOrAttempt(WordConnectPlaying state, BuildContext context) {
+    if (state.feedback.text.isNotEmpty) {
+      Color bg;
+      Color textColor = Colors.white;
+      IconData icon;
+
+      switch (state.feedback.type) {
+        case FeedbackType.success:
+          bg = AppTheme.emeraldGreen;
+          icon = Icons.check_circle_rounded;
+          break;
+        case FeedbackType.warning:
+          bg = AppTheme.primaryAmber;
+          icon = Icons.info_outline_rounded;
+          break;
+        case FeedbackType.error:
+          bg = AppTheme.coralRed;
+          icon = Icons.cancel_rounded;
+          break;
+        case FeedbackType.none:
+          bg = const Color(0xFF64748B);
+          icon = Icons.info_outline_rounded;
+          break;
+      }
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: bg.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              state.feedback.text,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ).animate().scale(duration: 180.ms);
+    }
+
+    if (state.currentAttempt.isNotEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryAmber,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryAmber.withValues(alpha: 0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Text(
+          state.currentAttempt.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 3.0,
+          ),
+        ),
+      ).animate().scale(duration: 150.ms);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  void _showHowToPlayDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Кантип ойноо керек?',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(dialogCtx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '1. Тегерекчедеги тамгалардын үстүнөн манжаңызды көтөрбөй сызыңыз (же тамгаларды бирден басыңыз).\n\n'
+                '2. Манжаңызды көтөргөндө сөз автоматтык түрдө текшерилет.\n\n'
+                '3. Мисалы, 1-деңгээлде төмөнкү сөздөр бар:\n'
+                '   • О -> Т = «ОТ»\n'
+                '   • О -> К = «ОК»\n'
+                '   • Т -> О -> К = «ТОК»\n'
+                '   • Т -> О -> О = «ТОО»\n'
+                '   • Т -> О -> О -> К = «ТООК»\n\n'
+                '4. Бардык сөздөр табылганда кийинки деңгээл ачылат!',
+                style: TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF334155)),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryAmber,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  ),
+                  child: const Text('Түшүндүм'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -195,3 +376,35 @@ class _WordConnectView extends StatelessWidget {
   }
 }
 
+class _CircleActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _CircleActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 3,
+      shadowColor: Colors.black12,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          AudioController.instance.playButtonClick();
+          onTap();
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Icon(icon, color: AppTheme.primaryDarkAmber, size: 26),
+        ),
+      ),
+    );
+  }
+}

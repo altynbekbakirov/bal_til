@@ -13,6 +13,8 @@
   static const String wordSolved = 'assets/audio/10.WordSolved.ogg';
   static const String wrongWord = 'assets/audio/11.WrongWord.ogg';
   static const String levelComplete = 'assets/audio/16.LevelFinished.ogg';
+  static const String hintSound = 'assets/audio/13.Hint.ogg';
+  static const String shuffleSound = 'assets/audio/14.Shuffle.ogg';
   static const String anthem = 'assets/audio/gimn.ogg';
 
   // Images
@@ -21,4 +23,3 @@
   static const String mapImage = 'assets/images/map/Map.png';
   static const String coatOfArms = 'assets/images/map/gerb.png';
 }
-

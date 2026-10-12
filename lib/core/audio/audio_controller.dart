@@ -42,25 +42,13 @@ class AudioController {
     } catch (_) {}
   }
 
-  Future<void> playButtonClick() async {
-    await playSfx(AssetPaths.clickSound);
-  }
-
-  Future<void> playLetterSelect() async {
-    await playSfx(AssetPaths.letterSelect);
-  }
-
-  Future<void> playWordSolved() async {
-    await playSfx(AssetPaths.wordSolved);
-  }
-
-  Future<void> playWrongWord() async {
-    await playSfx(AssetPaths.wrongWord);
-  }
-
-  Future<void> playLevelComplete() async {
-    await playSfx(AssetPaths.levelComplete);
-  }
+  Future<void> playButtonClick() async => playSfx(AssetPaths.clickSound);
+  Future<void> playLetterSelect() async => playSfx(AssetPaths.letterSelect);
+  Future<void> playWordSolved() async => playSfx(AssetPaths.wordSolved);
+  Future<void> playWrongWord() async => playSfx(AssetPaths.wrongWord);
+  Future<void> playLevelComplete() async => playSfx(AssetPaths.levelComplete);
+  Future<void> playHint() async => playSfx(AssetPaths.hintSound);
+  Future<void> playShuffle() async => playSfx(AssetPaths.shuffleSound);
 
   Future<void> playAnthem() async {
     try {

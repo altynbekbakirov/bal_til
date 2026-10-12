@@ -23,10 +23,11 @@ class WordWheel extends StatefulWidget {
 class _WordWheelState extends State<WordWheel> {
   final List<int> _selectedIndices = [];
   Offset? _currentTouch;
+  bool _isDragging = false;
 
   List<Offset> _calculateNodeCenters(Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = min(size.width, size.height) / 2 - 36;
+    final radius = min(size.width, size.height) / 2 - 38;
     final count = widget.letters.length;
     final List<Offset> positions = [];
 
@@ -41,7 +42,7 @@ class _WordWheelState extends State<WordWheel> {
 
   void _handleTouch(Offset localPos, Size size) {
     final centers = _calculateNodeCenters(size);
-    const nodeRadius = 32.0;
+    const nodeRadius = 34.0;
 
     for (int i = 0; i < centers.length; i++) {
       if ((localPos - centers[i]).distance <= nodeRadius) {
@@ -59,6 +60,13 @@ class _WordWheelState extends State<WordWheel> {
     }
   }
 
+  void clearSelection() {
+    setState(() {
+      _selectedIndices.clear();
+      _currentTouch = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -68,11 +76,13 @@ class _WordWheelState extends State<WordWheel> {
 
         return GestureDetector(
           onPanStart: (details) {
+            _isDragging = false;
             _selectedIndices.clear();
             _currentTouch = details.localPosition;
             _handleTouch(details.localPosition, size);
           },
           onPanUpdate: (details) {
+            _isDragging = true;
             setState(() {
               _currentTouch = details.localPosition;
             });
@@ -81,9 +91,20 @@ class _WordWheelState extends State<WordWheel> {
           onPanEnd: (_) {
             setState(() {
               _currentTouch = null;
-              _selectedIndices.clear();
             });
-            widget.onWordCompleted();
+            // Auto submit if dragged across 2 or more letters
+            if (_selectedIndices.length >= 2) {
+                            setState(() {
+                _selectedIndices.clear();
+              });
+              widget.onWordCompleted();
+            } else if (!_isDragging && _selectedIndices.isNotEmpty) {
+              // Single tap mode: keep selected so user can tap next letters
+            } else {
+              setState(() {
+                _selectedIndices.clear();
+              });
+            }
           },
           child: CustomPaint(
             size: size,
@@ -118,17 +139,17 @@ class _WordWheelPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final wheelRadius = min(size.width, size.height) / 2;
 
-    // Background circular plate
+    // Outer glow / border
     final platePaint = Paint()
-      ..color = const Color(0xFFF1F5F9)
+      ..color = const Color(0xFFF8FAFC)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, wheelRadius - 8, platePaint);
+    canvas.drawCircle(center, wheelRadius - 6, platePaint);
 
     final plateBorderPaint = Paint()
-      ..color = const Color(0xFFCBD5E1)
+      ..color = const Color(0xFFE2E8F0)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.0;
-    canvas.drawCircle(center, wheelRadius - 8, plateBorderPaint);
+    canvas.drawCircle(center, wheelRadius - 6, plateBorderPaint);
 
     // Connecting lines
     final linePaint = Paint()
@@ -149,7 +170,7 @@ class _WordWheelPainter extends CustomPainter {
     }
 
     // Letter nodes
-    const nodeRadius = 30.0;
+    const nodeRadius = 32.0;
     final defaultNodePaint = Paint()..color = Colors.white;
     final selectedNodePaint = Paint()..color = AppTheme.primaryAmber;
     final nodeShadowPaint = Paint()
@@ -167,7 +188,7 @@ class _WordWheelPainter extends CustomPainter {
 
       // Border
       final borderPaint = Paint()
-        ..color = isSelected ? AppTheme.primaryDarkAmber : const Color(0xFFE2E8F0)
+        ..color = isSelected ? AppTheme.primaryDarkAmber : const Color(0xFFCBD5E1)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5;
       canvas.drawCircle(pos, nodeRadius, borderPaint);
