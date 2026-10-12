@@ -6,12 +6,14 @@ import '../../../core/theme/app_theme.dart';
 
 class WordWheel extends StatefulWidget {
   final List<String> letters;
+  final String currentAttempt;
   final ValueChanged<String> onWordChanged;
   final VoidCallback onWordCompleted;
 
   const WordWheel({
     super.key,
     required this.letters,
+    required this.currentAttempt,
     required this.onWordChanged,
     required this.onWordCompleted,
   });
@@ -23,7 +25,20 @@ class WordWheel extends StatefulWidget {
 class _WordWheelState extends State<WordWheel> {
   final List<int> _selectedIndices = [];
   Offset? _currentTouch;
-  bool _isDragging = false;
+  double _dragDistance = 0.0;
+  Offset _lastPos = Offset.zero;
+
+  @override
+  void didUpdateWidget(covariant WordWheel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the attempt was cleared from outside (after submit or reset), clear selected nodes
+    if (widget.currentAttempt.isEmpty && _selectedIndices.isNotEmpty) {
+      setState(() {
+        _selectedIndices.clear();
+        _currentTouch = null;
+      });
+    }
+  }
 
   List<Offset> _calculateNodeCenters(Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -42,7 +57,7 @@ class _WordWheelState extends State<WordWheel> {
 
   void _handleTouch(Offset localPos, Size size) {
     final centers = _calculateNodeCenters(size);
-    const nodeRadius = 34.0;
+    const nodeRadius = 36.0;
 
     for (int i = 0; i < centers.length; i++) {
       if ((localPos - centers[i]).distance <= nodeRadius) {
@@ -54,17 +69,18 @@ class _WordWheelState extends State<WordWheel> {
           });
           final word = _selectedIndices.map((idx) => widget.letters[idx]).join();
           widget.onWordChanged(word);
+        } else if (_dragDistance <= 15 && _selectedIndices.isNotEmpty && _selectedIndices.last == i && _selectedIndices.length > 1) {
+          // Tap on last selected letter -> backspace
+          HapticFeedback.lightImpact();
+          setState(() {
+            _selectedIndices.removeLast();
+          });
+          final word = _selectedIndices.map((idx) => widget.letters[idx]).join();
+          widget.onWordChanged(word);
         }
         break;
       }
     }
-  }
-
-  void clearSelection() {
-    setState(() {
-      _selectedIndices.clear();
-      _currentTouch = null;
-    });
   }
 
   @override
@@ -76,13 +92,18 @@ class _WordWheelState extends State<WordWheel> {
 
         return GestureDetector(
           onPanStart: (details) {
-            _isDragging = false;
-            _selectedIndices.clear();
+            _dragDistance = 0.0;
+            _lastPos = details.localPosition;
             _currentTouch = details.localPosition;
+            // Only clear selection if we were starting a completely new attempt
+            if (widget.currentAttempt.isEmpty) {
+              _selectedIndices.clear();
+            }
             _handleTouch(details.localPosition, size);
           },
           onPanUpdate: (details) {
-            _isDragging = true;
+            _dragDistance += (details.localPosition - _lastPos).distance;
+            _lastPos = details.localPosition;
             setState(() {
               _currentTouch = details.localPosition;
             });
@@ -92,19 +113,11 @@ class _WordWheelState extends State<WordWheel> {
             setState(() {
               _currentTouch = null;
             });
-            // Auto submit if dragged across 2 or more letters
-            if (_selectedIndices.length >= 2) {
-                            setState(() {
-                _selectedIndices.clear();
-              });
+            // If user swiped across multiple letters continuously, auto-submit on release
+            if (_dragDistance > 30 && _selectedIndices.length >= 2) {
               widget.onWordCompleted();
-            } else if (!_isDragging && _selectedIndices.isNotEmpty) {
-              // Single tap mode: keep selected so user can tap next letters
-            } else {
-              setState(() {
-                _selectedIndices.clear();
-              });
             }
+            // If it was a tap (_dragDistance <= 30), keep nodes selected so user can tap next letters!
           },
           child: CustomPaint(
             size: size,
@@ -139,7 +152,7 @@ class _WordWheelPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final wheelRadius = min(size.width, size.height) / 2;
 
-    // Outer glow / border
+    // Outer wheel plate
     final platePaint = Paint()
       ..color = const Color(0xFFF8FAFC)
       ..style = PaintingStyle.fill;
@@ -216,4 +229,3 @@ class _WordWheelPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _WordWheelPainter oldDelegate) => true;
 }
-

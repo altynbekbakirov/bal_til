@@ -117,6 +117,7 @@ class _WordConnectView extends StatelessWidget {
                               aspectRatio: 1.0,
                               child: WordWheel(
                                 letters: state.currentLetters,
+                                currentAttempt: state.currentAttempt,
                                 onWordChanged: (word) {
                                   context.read<WordConnectCubit>().updateAttempt(word);
                                 },
@@ -408,3 +409,4 @@ class _CircleActionButton extends StatelessWidget {
     );
   }
 }
+

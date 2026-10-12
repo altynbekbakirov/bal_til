@@ -141,7 +141,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
   void submitAttempt() {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
-    final candidate = s.currentAttempt.toLowerCase().trim();
+    final candidate = s.currentAttempt.toLowerCase().trim().replaceAll(' ', '');
 
     if (candidate.isEmpty) return;
 
@@ -230,3 +230,4 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     }
   }
 }
+
