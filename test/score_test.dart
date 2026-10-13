@@ -2,6 +2,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ball_til/data/repositories/score_repository.dart';
 import 'package:ball_til/core/score/score_cubit.dart';
+import 'package:ball_til/features/word_connect/cubit/word_connect_cubit.dart';
+import 'package:ball_til/data/models/models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -82,6 +84,38 @@ void main() {
       await cubit.resetAll();
       expect(cubit.state.overall.totalScore, 0);
       expect(cubit.state.overall.totalStars, 0);
+    });
+
+    test('WordConnect hint limitation enforces maximum of 3 hints per level', () async {
+      final level = const WordGame1Level(
+        letters: ['о', 'т'],
+        words: ['от'],
+      );
+      final pack = WordGame1Pack(
+        title: 'Тест',
+        maxLetters: 2,
+        levels: [level],
+      );
+
+      final state = WordConnectPlaying(
+        packs: [pack],
+        packIndex: 0,
+        levelIndex: 0,
+        level: level,
+        currentLetters: ['о', 'т'],
+        solvedWords: {},
+      );
+
+      expect(state.remainingHints, 3);
+      expect(state.canUseHint, true);
+
+      final after1 = state.copyWith(hintsUsed: 1);
+      expect(after1.remainingHints, 2);
+      expect(after1.canUseHint, true);
+
+      final after3 = state.copyWith(hintsUsed: 3);
+      expect(after3.remainingHints, 0);
+      expect(after3.canUseHint, false);
     });
   });
 }

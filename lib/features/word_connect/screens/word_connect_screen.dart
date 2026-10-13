@@ -167,7 +167,9 @@ class _WordConnectView extends StatelessWidget {
                           // Hint button
                           _CircleActionButton(
                             icon: Icons.lightbulb_outline_rounded,
-                            tooltip: 'Кеңеш',
+                            tooltip: 'Кеңеш (калды: ${state.remainingHints})',
+                            badgeText: '${state.remainingHints}',
+                            isEnabled: state.canUseHint,
                             onTap: () => context.read<WordConnectCubit>().giveHint(),
                           ),
                         ],
@@ -336,7 +338,7 @@ class _WordConnectView extends StatelessWidget {
                 '   • Т -> О -> О = «ТОО»\n'
                 '   • Т -> О -> О -> К = «ТООК»\n\n'
                 '4. Бардык сөздөр табылганда кийинки деңгээл ачылат!\n\n'
-                '5. Кеңешти канчалык аз колдонсоңуз, ошончо көп жылдыз жана упай аласыз! ⭐⭐⭐',
+                '5. Ар бир деңгээлде 3 кеңеш берилет. Кеңешти колдонбосоңуз — 3 толук жылдыз аласыз! ⭐⭐⭐',
                 style: TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF334155)),
               ),
               const SizedBox(height: 20),
@@ -441,31 +443,65 @@ class _CircleActionButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
+  final String? badgeText;
+  final bool isEnabled;
 
   const _CircleActionButton({
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.badgeText,
+    this.isEnabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      elevation: 3,
-      shadowColor: Colors.black12,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: () {
-          AudioController.instance.playButtonClick();
-          onTap();
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: AppTheme.primaryDarkAmber, size: 26),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Material(
+          color: isEnabled ? Colors.white : const Color(0xFFF1F5F9),
+          shape: const CircleBorder(),
+          elevation: isEnabled ? 3 : 1,
+          shadowColor: Colors.black12,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () {
+              AudioController.instance.playButtonClick();
+              onTap();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                icon,
+                color: isEnabled ? AppTheme.primaryDarkAmber : const Color(0xFF94A3B8),
+                size: 26,
+              ),
+            ),
+          ),
         ),
-      ),
+        if (badgeText != null)
+          Positioned(
+            top: -2,
+            right: -2,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: isEnabled ? AppTheme.primaryAmber : const Color(0xFF94A3B8),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Text(
+                badgeText!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

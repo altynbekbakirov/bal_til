@@ -18,6 +18,8 @@ abstract class WordConnectState {}
 class WordConnectLoading extends WordConnectState {}
 
 class WordConnectPlaying extends WordConnectState {
+  static const int maxHintsPerLevel = 3;
+
   final List<WordGame1Pack> packs;
   final int packIndex;
   final int levelIndex;
@@ -51,6 +53,9 @@ class WordConnectPlaying extends WordConnectState {
     this.totalScore = 0,
     this.totalStars = 0,
   });
+
+  int get remainingHints => (maxHintsPerLevel - hintsUsed).clamp(0, maxHintsPerLevel);
+  bool get canUseHint => remainingHints > 0 && !isCompleted;
 
   WordConnectPlaying copyWith({
     int? packIndex,
@@ -266,6 +271,17 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
 
+    if (!s.canUseHint) {
+      AudioController.instance.playWrongWord();
+      emit(s.copyWith(
+        feedback: const WordFeedback(
+          text: 'Бул деңгээлде кеңештер бүттү! Өзүң ойлонуп көр 😊',
+          type: FeedbackType.warning,
+        ),
+      ));
+      return;
+    }
+
     final unsolvedWords = s.level.words.where((w) => !s.solvedWords.contains(w)).toList();
     if (unsolvedWords.isEmpty) return;
 
@@ -302,6 +318,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     int newTotalScore = s.totalScore;
     int newTotalStars = s.totalStars;
     final newHintsUsed = s.hintsUsed + 1;
+    final remainingAfterThis = (WordConnectPlaying.maxHintsPerLevel - newHintsUsed).clamp(0, WordConnectPlaying.maxHintsPerLevel);
 
     if (isAllSolved) {
       AudioController.instance.playLevelComplete();
@@ -326,7 +343,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       solvedWords: newSolved,
       hintsUsed: newHintsUsed,
       feedback: WordFeedback(
-        text: 'Кеңеш: «${word[letterIdx].toUpperCase()}» тамгасы ачылды!',
+        text: 'Кеңеш: «${word[letterIdx].toUpperCase()}» тамгасы ачылды! (Калды: $remainingAfterThis)',
         type: FeedbackType.warning,
       ),
       isCompleted: isAllSolved,
