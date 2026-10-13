@@ -1,9 +1,9 @@
 ﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ball_til/data/repositories/score_repository.dart';
-import 'package:ball_til/core/score/score_cubit.dart';
-import 'package:ball_til/features/word_connect/cubit/word_connect_cubit.dart';
-import 'package:ball_til/data/models/models.dart';
+import 'package:bal_til/data/repositories/score_repository.dart';
+import 'package:bal_til/core/score/score_cubit.dart';
+import 'package:bal_til/features/word_connect/cubit/word_connect_cubit.dart';
+import 'package:bal_til/data/models/models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
