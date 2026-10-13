@@ -2,6 +2,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../cubit/word_search_cubit.dart';
 import '../widgets/grid_board.dart';
@@ -26,9 +27,19 @@ class _WordSearchView extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFECFDF5),
       appBar: AppBar(
-        title: const Text(
-          'Сөз издөө',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+        title: BlocBuilder<WordSearchCubit, WordSearchState>(
+          builder: (context, state) {
+            if (state is WordSearchPlaying) {
+              return Text(
+                'Сөз издөө • ${state.categoryName}',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              );
+            }
+            return const Text(
+              'Сөз издөө',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            );
+          },
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B)),
@@ -37,11 +48,47 @@ class _WordSearchView extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          BlocBuilder<WordSearchCubit, WordSearchState>(
+            builder: (context, state) {
+              if (state is WordSearchPlaying) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.emeraldGreen.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.military_tech_rounded, size: 18, color: AppTheme.emeraldGreen),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${state.totalScore}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.emeraldGreen),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.check_circle_rounded, size: 16, color: AppTheme.skyTurquoise),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${state.categoriesCompleted}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.skyTurquoise),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       body: BlocConsumer<WordSearchCubit, WordSearchState>(
         listener: (context, state) {
           if (state is WordSearchPlaying && state.isCompleted) {
-            _showVictoryDialog(context);
+            context.read<ScoreCubit>().loadScores();
+            _showVictoryDialog(context, state);
           }
         },
         builder: (context, state) {
@@ -120,7 +167,7 @@ class _WordSearchView extends StatelessWidget {
     );
   }
 
-  void _showVictoryDialog(BuildContext context) {
+  void _showVictoryDialog(BuildContext context, WordSearchPlaying state) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -145,17 +192,28 @@ class _WordSearchView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  '+${state.scoreEarned} упай топтолду!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.emeraldGreen,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 const Text(
                   'Торчодогу баардык сөздөр табылды!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
                     AudioController.instance.playButtonClick();
                     Navigator.pop(dialogCtx);
                     context.read<WordSearchCubit>().nextCategory();
+                    context.read<ScoreCubit>().loadScores();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.emeraldGreen,
@@ -176,4 +234,3 @@ class _WordSearchView extends StatelessWidget {
     );
   }
 }
-

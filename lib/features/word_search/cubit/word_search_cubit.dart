@@ -2,6 +2,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
+import '../../../data/repositories/score_repository.dart';
 import '../../../core/audio/audio_controller.dart';
 
 class WordSearchBoard {
@@ -36,13 +37,41 @@ class WordSearchLoading extends WordSearchState {}
 class WordSearchPlaying extends WordSearchState {
   final WordSearchBoard board;
   final int categoryIndex;
+  final String categoryName;
   final bool isCompleted;
+  final int scoreEarned;
+  final int totalScore;
+  final int categoriesCompleted;
 
   WordSearchPlaying({
     required this.board,
     required this.categoryIndex,
+    required this.categoryName,
     this.isCompleted = false,
+    this.scoreEarned = 0,
+    this.totalScore = 0,
+    this.categoriesCompleted = 0,
   });
+
+  WordSearchPlaying copyWith({
+    WordSearchBoard? board,
+    int? categoryIndex,
+    String? categoryName,
+    bool? isCompleted,
+    int? scoreEarned,
+    int? totalScore,
+    int? categoriesCompleted,
+  }) {
+    return WordSearchPlaying(
+      board: board ?? this.board,
+      categoryIndex: categoryIndex ?? this.categoryIndex,
+      categoryName: categoryName ?? this.categoryName,
+      isCompleted: isCompleted ?? this.isCompleted,
+      scoreEarned: scoreEarned ?? this.scoreEarned,
+      totalScore: totalScore ?? this.totalScore,
+      categoriesCompleted: categoriesCompleted ?? this.categoriesCompleted,
+    );
+  }
 }
 
 class WordSearchError extends WordSearchState {
@@ -52,7 +81,10 @@ class WordSearchError extends WordSearchState {
 
 class WordSearchCubit extends Cubit<WordSearchState> {
   final WordGameRepository _repository = WordGameRepository();
+  final ScoreRepository _scoreRepository = ScoreRepository();
   List<WordGame2Category> _categories = [];
+  int _totalScore = 0;
+  int _categoriesCompleted = 0;
 
   WordSearchCubit() : super(WordSearchLoading());
 
@@ -64,7 +96,16 @@ class WordSearchCubit extends Cubit<WordSearchState> {
         emit(WordSearchError('Сөздөр табылган жок'));
         return;
       }
-      _generateBoard(0);
+      final progress = await _scoreRepository.getWordSearchProgress();
+      _totalScore = progress.totalScore;
+      _categoriesCompleted = progress.categoriesCompleted;
+
+      int catIdx = progress.categoryIndex;
+      if (catIdx >= _categories.length) {
+        catIdx = 0;
+      }
+
+      _generateBoard(catIdx);
     } catch (e) {
       emit(WordSearchError('Оюнду жүктөөдө ката чыкты: $e'));
     }
@@ -132,11 +173,15 @@ class WordSearchCubit extends Cubit<WordSearchState> {
         foundWords: {},
       ),
       categoryIndex: categoryIndex,
+      categoryName: cat.name,
       isCompleted: false,
+      scoreEarned: 0,
+      totalScore: _totalScore,
+      categoriesCompleted: _categoriesCompleted,
     ));
   }
 
-  void submitSelectedWord(String word) {
+  Future<void> submitSelectedWord(String word) async {
     if (state is! WordSearchPlaying) return;
     final s = state as WordSearchPlaying;
     final candidate = word.toLowerCase().trim();
@@ -153,27 +198,40 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       final newFound = Set<String>.from(s.board.foundWords)..add(matched);
       final isAll = newFound.length >= s.board.targetWords.length;
 
+      int scoreEarned = 0;
       if (isAll) {
         AudioController.instance.playLevelComplete();
+        scoreEarned = (s.board.targetWords.length * 5) + 20;
+
+        final updated = await _scoreRepository.recordWordSearchCategoryCompleted(
+          categoryIndex: s.categoryIndex,
+          wordsFoundCount: s.board.targetWords.length,
+          scoreEarned: scoreEarned,
+          totalCategories: _categories.length,
+        );
+        _totalScore = updated.totalScore;
+        _categoriesCompleted = updated.categoriesCompleted;
       } else {
         AudioController.instance.playWordSolved();
       }
 
-      emit(WordSearchPlaying(
+      emit(s.copyWith(
         board: s.board.copyWith(foundWords: newFound),
-        categoryIndex: s.categoryIndex,
         isCompleted: isAll,
+        scoreEarned: scoreEarned,
+        totalScore: _totalScore,
+        categoriesCompleted: _categoriesCompleted,
       ));
     } else {
       AudioController.instance.playWrongWord();
     }
   }
 
-  void nextCategory() {
+  Future<void> nextCategory() async {
     if (state is! WordSearchPlaying) return;
     final s = state as WordSearchPlaying;
     final nextIdx = (s.categoryIndex + 1) % _categories.length;
+    await _scoreRepository.saveWordSearchCurrentCategory(nextIdx);
     _generateBoard(nextIdx);
   }
 }
-

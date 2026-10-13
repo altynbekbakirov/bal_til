@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../cubit/word_connect_cubit.dart';
 import '../widgets/word_matrix.dart';
@@ -32,10 +33,10 @@ class _WordConnectView extends StatelessWidget {
             if (state is WordConnectPlaying) {
               return Text(
                 '${state.packs[state.packIndex].title} • ${state.levelIndex + 1}-деңгээл',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
               );
             }
-            return const Text('Сөздү тап');
+            return const Text('Сөз кура');
           },
         ),
         leading: IconButton(
@@ -46,6 +47,39 @@ class _WordConnectView extends StatelessWidget {
           },
         ),
         actions: [
+          BlocBuilder<WordConnectCubit, WordConnectState>(
+            builder: (context, state) {
+              if (state is WordConnectPlaying) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryAmber.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, size: 18, color: AppTheme.primaryDarkAmber),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${state.totalStars}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryDarkAmber),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.military_tech_rounded, size: 18, color: AppTheme.skyTurquoise),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${state.totalScore}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.skyTurquoise),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: Color(0xFF1E293B), size: 26),
             tooltip: 'Кантип ойноо керек?',
@@ -59,7 +93,8 @@ class _WordConnectView extends StatelessWidget {
       body: BlocConsumer<WordConnectCubit, WordConnectState>(
         listener: (context, state) {
           if (state is WordConnectPlaying && state.isCompleted) {
-            _showVictoryDialog(context);
+            context.read<ScoreCubit>().loadScores();
+            _showVictoryDialog(context, state);
           }
         },
         builder: (context, state) {
@@ -300,7 +335,8 @@ class _WordConnectView extends StatelessWidget {
                 '   • Т -> О -> К = «ТОК»\n'
                 '   • Т -> О -> О = «ТОО»\n'
                 '   • Т -> О -> О -> К = «ТООК»\n\n'
-                '4. Бардык сөздөр табылганда кийинки деңгээл ачылат!',
+                '4. Бардык сөздөр табылганда кийинки деңгээл ачылат!\n\n'
+                '5. Кеңешти канчалык аз колдонсоңуз, ошончо көп жылдыз жана упай аласыз! ⭐⭐⭐',
                 style: TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF334155)),
               ),
               const SizedBox(height: 20),
@@ -322,7 +358,7 @@ class _WordConnectView extends StatelessWidget {
     );
   }
 
-  void _showVictoryDialog(BuildContext context) {
+  void _showVictoryDialog(BuildContext context, WordConnectPlaying state) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -334,9 +370,20 @@ class _WordConnectView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.star_rounded, size: 72, color: AppTheme.sunnyYellow)
-                    .animate()
-                    .scale(duration: 500.ms, curve: Curves.elasticOut),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (i) {
+                    final isEarned = i < state.starsEarned;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        isEarned ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 46,
+                        color: isEarned ? AppTheme.sunnyYellow : const Color(0xFFCBD5E1),
+                      ),
+                    );
+                  }),
+                ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                 const SizedBox(height: 12),
                 const Text(
                   'Азаматсың!',
@@ -347,17 +394,28 @@ class _WordConnectView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  '+${state.levelScore} упай топтолду!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryDarkAmber,
+                  ),
+                ),
+                const SizedBox(height: 4),
                 const Text(
                   'Баардык сөздөр туура табылды!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
                     AudioController.instance.playButtonClick();
                     Navigator.pop(dialogCtx);
                     context.read<WordConnectCubit>().nextLevel();
+                    context.read<ScoreCubit>().loadScores();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryAmber,
@@ -411,5 +469,3 @@ class _CircleActionButton extends StatelessWidget {
     );
   }
 }
-
-

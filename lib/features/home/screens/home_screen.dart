@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../configs/routes.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/settings_dialog.dart';
@@ -18,7 +20,7 @@ class HomeScreen extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -81,6 +83,143 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+            SliverToBoxAdapter(
+              child: BlocBuilder<ScoreCubit, ScoreState>(
+                builder: (context, state) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFDE68A),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.star_rounded, color: AppTheme.primaryDarkAmber, size: 20),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${state.overall.totalStars}',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Жылдыз',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.skyTurquoise.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.military_tech_rounded, color: AppTheme.skyTurquoise, size: 20),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${state.overall.totalScore}',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Упай',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(height: 28, width: 1, color: const Color(0xFFE2E8F0)),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.check_circle_rounded, color: AppTheme.emeraldGreen, size: 20),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${state.overall.wordConnectCompleted + state.overall.wordSearchCompleted}',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const Text(
+                                    'Деңгээл',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(duration: 350.ms);
+                },
+              ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               sliver: SliverList(
@@ -91,7 +230,12 @@ class HomeScreen extends StatelessWidget {
                     icon: Icons.extension_rounded,
                     primaryColor: const Color(0xFFF59E0B),
                     secondaryColor: const Color(0xFFEA580C),
-                    onTap: () => Navigator.pushNamed(context, Routers.wordConnect),
+                    onTap: () async {
+                      await Navigator.pushNamed(context, Routers.wordConnect);
+                      if (context.mounted) {
+                        context.read<ScoreCubit>().loadScores();
+                      }
+                    },
                   ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, duration: 400.ms),
                   const SizedBox(height: 16),
                   MenuCardButton(
@@ -100,7 +244,12 @@ class HomeScreen extends StatelessWidget {
                     icon: Icons.grid_view_rounded,
                     primaryColor: const Color(0xFF10B981),
                     secondaryColor: const Color(0xFF059669),
-                    onTap: () => Navigator.pushNamed(context, Routers.wordSearch),
+                    onTap: () async {
+                      await Navigator.pushNamed(context, Routers.wordSearch);
+                      if (context.mounted) {
+                        context.read<ScoreCubit>().loadScores();
+                      }
+                    },
                   ).animate().fadeIn(delay: 80.ms, duration: 400.ms).slideY(begin: 0.1, duration: 400.ms),
                   const SizedBox(height: 16),
                   MenuCardButton(

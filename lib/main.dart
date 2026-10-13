@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'configs/routes.dart';
 import 'core/audio/audio_cubit.dart';
+import 'core/score/score_cubit.dart';
 import 'core/theme/app_theme.dart';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -33,14 +34,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<AudioCubit>(create: (_) => AudioCubit()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -48,12 +42,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Бал тил',
-      theme: AppTheme.lightTheme,
-      initialRoute: Routers.home,
-      routes: Routers.routes,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AudioCubit>(create: (_) => AudioCubit()),
+        BlocProvider<ScoreCubit>(create: (_) => ScoreCubit()..loadScores()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Бал тил',
+        theme: AppTheme.lightTheme,
+        initialRoute: Routers.home,
+        routes: Routers.routes,
+      ),
     );
   }
 }

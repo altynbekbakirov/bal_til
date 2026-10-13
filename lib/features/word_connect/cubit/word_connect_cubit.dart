@@ -2,6 +2,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
+import '../../../data/repositories/score_repository.dart';
 import '../../../core/audio/audio_controller.dart';
 
 enum FeedbackType { none, success, warning, error }
@@ -27,6 +28,11 @@ class WordConnectPlaying extends WordConnectState {
   final String currentAttempt;
   final WordFeedback feedback;
   final bool isCompleted;
+  final int hintsUsed;
+  final int starsEarned;
+  final int levelScore;
+  final int totalScore;
+  final int totalStars;
 
   WordConnectPlaying({
     required this.packs,
@@ -39,6 +45,11 @@ class WordConnectPlaying extends WordConnectState {
     this.currentAttempt = '',
     this.feedback = const WordFeedback(),
     this.isCompleted = false,
+    this.hintsUsed = 0,
+    this.starsEarned = 0,
+    this.levelScore = 0,
+    this.totalScore = 0,
+    this.totalStars = 0,
   });
 
   WordConnectPlaying copyWith({
@@ -51,6 +62,11 @@ class WordConnectPlaying extends WordConnectState {
     String? currentAttempt,
     WordFeedback? feedback,
     bool? isCompleted,
+    int? hintsUsed,
+    int? starsEarned,
+    int? levelScore,
+    int? totalScore,
+    int? totalStars,
   }) {
     return WordConnectPlaying(
       packs: packs,
@@ -63,6 +79,11 @@ class WordConnectPlaying extends WordConnectState {
       currentAttempt: currentAttempt ?? this.currentAttempt,
       feedback: feedback ?? this.feedback,
       isCompleted: isCompleted ?? this.isCompleted,
+      hintsUsed: hintsUsed ?? this.hintsUsed,
+      starsEarned: starsEarned ?? this.starsEarned,
+      levelScore: levelScore ?? this.levelScore,
+      totalScore: totalScore ?? this.totalScore,
+      totalStars: totalStars ?? this.totalStars,
     );
   }
 }
@@ -74,6 +95,7 @@ class WordConnectError extends WordConnectState {
 
 class WordConnectCubit extends Cubit<WordConnectState> {
   final WordGameRepository _repository = WordGameRepository();
+  final ScoreRepository _scoreRepository = ScoreRepository();
 
   WordConnectCubit() : super(WordConnectLoading());
 
@@ -85,7 +107,25 @@ class WordConnectCubit extends Cubit<WordConnectState> {
         emit(WordConnectError('Деңгээлдер табылган жок'));
         return;
       }
-      _startLevel(packs: packs, packIndex: 0, levelIndex: 0);
+
+      final progress = await _scoreRepository.getWordConnectProgress();
+      int packIdx = progress.packIndex;
+      int levelIdx = progress.levelIndex;
+
+      if (packIdx >= packs.length) {
+        packIdx = 0;
+        levelIdx = 0;
+      } else if (levelIdx >= packs[packIdx].levels.length) {
+        levelIdx = 0;
+      }
+
+      _startLevel(
+        packs: packs,
+        packIndex: packIdx,
+        levelIndex: levelIdx,
+        totalScore: progress.totalScore,
+        totalStars: progress.totalStars,
+      );
     } catch (e) {
       emit(WordConnectError('Оюнду жүктөөдө ката чыкты: $e'));
     }
@@ -95,6 +135,8 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     required List<WordGame1Pack> packs,
     required int packIndex,
     required int levelIndex,
+    int totalScore = 0,
+    int totalStars = 0,
   }) {
     final pack = packs[packIndex];
     final level = pack.levels[levelIndex];
@@ -109,6 +151,11 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       currentAttempt: '',
       feedback: const WordFeedback(),
       isCompleted: false,
+      hintsUsed: 0,
+      starsEarned: 0,
+      levelScore: 0,
+      totalScore: totalScore,
+      totalStars: totalStars,
     ));
   }
 
@@ -132,7 +179,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     }
   }
 
-  void submitAttempt() {
+  Future<void> submitAttempt() async {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
     final candidate = s.currentAttempt.toLowerCase().trim().replaceAll(' ', '');
@@ -157,8 +204,27 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       final newSolved = Set<String>.from(s.solvedWords)..add(candidate);
       final isAllSolved = newSolved.length >= s.level.words.length;
 
+      int starsEarned = 0;
+      int levelScore = 0;
+      int newTotalScore = s.totalScore;
+      int newTotalStars = s.totalStars;
+
       if (isAllSolved) {
         AudioController.instance.playLevelComplete();
+        starsEarned = s.hintsUsed == 0 ? 3 : (s.hintsUsed == 1 ? 2 : 1);
+        levelScore = (s.level.words.length * 10) + (starsEarned * 10);
+
+        final updatedProgress = await _scoreRepository.recordWordConnectLevelCompleted(
+          packIndex: s.packIndex,
+          levelIndex: s.levelIndex,
+          starsEarned: starsEarned,
+          scoreEarned: levelScore,
+          maxLevelsInPack: s.packs[s.packIndex].levels.length,
+          maxPacks: s.packs.length,
+        );
+
+        newTotalScore = updatedProgress.totalScore;
+        newTotalStars = updatedProgress.totalStars;
       } else {
         AudioController.instance.playWordSolved();
       }
@@ -171,6 +237,10 @@ class WordConnectCubit extends Cubit<WordConnectState> {
           type: FeedbackType.success,
         ),
         isCompleted: isAllSolved,
+        starsEarned: starsEarned,
+        levelScore: levelScore,
+        totalScore: newTotalScore,
+        totalStars: newTotalStars,
       ));
     } else {
       AudioController.instance.playWrongWord();
@@ -192,7 +262,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     emit(s.copyWith(currentLetters: shuffled));
   }
 
-  void giveHint() {
+  Future<void> giveHint() async {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
 
@@ -227,22 +297,47 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     }
 
     final isAllSolved = newSolved.length >= s.level.words.length;
+    int starsEarned = 0;
+    int levelScore = 0;
+    int newTotalScore = s.totalScore;
+    int newTotalStars = s.totalStars;
+    final newHintsUsed = s.hintsUsed + 1;
+
     if (isAllSolved) {
       AudioController.instance.playLevelComplete();
+      starsEarned = newHintsUsed == 0 ? 3 : (newHintsUsed == 1 ? 2 : 1);
+      levelScore = (s.level.words.length * 10) + (starsEarned * 10);
+
+      final updatedProgress = await _scoreRepository.recordWordConnectLevelCompleted(
+        packIndex: s.packIndex,
+        levelIndex: s.levelIndex,
+        starsEarned: starsEarned,
+        scoreEarned: levelScore,
+        maxLevelsInPack: s.packs[s.packIndex].levels.length,
+        maxPacks: s.packs.length,
+      );
+
+      newTotalScore = updatedProgress.totalScore;
+      newTotalStars = updatedProgress.totalStars;
     }
 
     emit(s.copyWith(
       hintedLetters: newHintedMap,
       solvedWords: newSolved,
+      hintsUsed: newHintsUsed,
       feedback: WordFeedback(
         text: 'Кеңеш: «${word[letterIdx].toUpperCase()}» тамгасы ачылды!',
         type: FeedbackType.warning,
       ),
       isCompleted: isAllSolved,
+      starsEarned: starsEarned,
+      levelScore: levelScore,
+      totalScore: newTotalScore,
+      totalStars: newTotalStars,
     ));
   }
 
-  void nextLevel() {
+  Future<void> nextLevel() async {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
     int nextLevelIdx = s.levelIndex + 1;
@@ -253,8 +348,19 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       nextLevelIdx = 0;
     }
 
-    if (nextPackIdx < s.packs.length) {
-      _startLevel(packs: s.packs, packIndex: nextPackIdx, levelIndex: nextLevelIdx);
+    if (nextPackIdx >= s.packs.length) {
+      nextPackIdx = 0;
+      nextLevelIdx = 0;
     }
+
+    await _scoreRepository.saveWordConnectCurrentPosition(nextPackIdx, nextLevelIdx);
+
+    _startLevel(
+      packs: s.packs,
+      packIndex: nextPackIdx,
+      levelIndex: nextLevelIdx,
+      totalScore: s.totalScore,
+      totalStars: s.totalStars,
+    );
   }
 }

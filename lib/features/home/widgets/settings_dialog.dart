@@ -2,6 +2,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SettingsDialog extends StatelessWidget {
@@ -59,7 +60,41 @@ class SettingsDialog extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            // Reset Progress Button
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                AudioController.instance.playButtonClick();
+                _showResetConfirmDialog(context);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F2),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFFECDD3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.restart_alt_rounded, color: AppTheme.coralRed, size: 24),
+                    SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        'Упайларды тазалоо',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.coralRed,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.coralRed, size: 14),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -74,6 +109,43 @@ class SettingsDialog extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showResetConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Упайларды тазалоо', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Бардык оюндардагы топтолгон упайлар жана ачылган деңгээлдер баштапкы абалга келтирилет. Чын эле тазалайсызбы?',
+          style: TextStyle(fontSize: 14, color: Color(0xFF334155)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Жок'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.coralRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              context.read<ScoreCubit>().resetAll();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Упайлар жана деңгээлдер баштапкы абалга келтирилди!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('Ооба, тазала'),
+          ),
+        ],
       ),
     );
   }
@@ -123,5 +195,3 @@ class _SettingRow extends StatelessWidget {
     );
   }
 }
-
-
