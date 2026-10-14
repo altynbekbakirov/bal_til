@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
@@ -38,6 +38,7 @@ class WordSearchPlaying extends WordSearchState {
   final WordSearchBoard board;
   final int categoryIndex;
   final String categoryName;
+  final int totalCategories;
   final bool isCompleted;
   final int scoreEarned;
   final int totalScore;
@@ -47,6 +48,7 @@ class WordSearchPlaying extends WordSearchState {
     required this.board,
     required this.categoryIndex,
     required this.categoryName,
+    this.totalCategories = 3,
     this.isCompleted = false,
     this.scoreEarned = 0,
     this.totalScore = 0,
@@ -57,6 +59,7 @@ class WordSearchPlaying extends WordSearchState {
     WordSearchBoard? board,
     int? categoryIndex,
     String? categoryName,
+    int? totalCategories,
     bool? isCompleted,
     int? scoreEarned,
     int? totalScore,
@@ -66,6 +69,7 @@ class WordSearchPlaying extends WordSearchState {
       board: board ?? this.board,
       categoryIndex: categoryIndex ?? this.categoryIndex,
       categoryName: categoryName ?? this.categoryName,
+      totalCategories: totalCategories ?? this.totalCategories,
       isCompleted: isCompleted ?? this.isCompleted,
       scoreEarned: scoreEarned ?? this.scoreEarned,
       totalScore: totalScore ?? this.totalScore,
@@ -174,6 +178,7 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       ),
       categoryIndex: categoryIndex,
       categoryName: cat.name,
+      totalCategories: _categories.length,
       isCompleted: false,
       scoreEarned: 0,
       totalScore: _totalScore,

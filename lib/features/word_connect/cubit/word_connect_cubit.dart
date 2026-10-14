@@ -1,4 +1,6 @@
-﻿import 'dart:math';
+import 'dart:async';
+import 'dart:math';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
@@ -28,6 +30,7 @@ class WordConnectPlaying extends WordConnectState {
   final Set<String> solvedWords;
   final Map<String, Set<int>> hintedLetters;
   final String currentAttempt;
+  final String activeHintPrefix;
   final WordFeedback feedback;
   final bool isCompleted;
   final int hintsUsed;
@@ -45,6 +48,7 @@ class WordConnectPlaying extends WordConnectState {
     required this.solvedWords,
     this.hintedLetters = const {},
     this.currentAttempt = '',
+    this.activeHintPrefix = '',
     this.feedback = const WordFeedback(),
     this.isCompleted = false,
     this.hintsUsed = 0,
@@ -57,6 +61,41 @@ class WordConnectPlaying extends WordConnectState {
   int get remainingHints => (maxHintsPerLevel - hintsUsed).clamp(0, maxHintsPerLevel);
   bool get canUseHint => remainingHints > 0 && !isCompleted;
 
+  String get effectiveHintPrefix {
+    if (activeHintPrefix.isNotEmpty) {
+      for (final w in level.words) {
+        if (!solvedWords.contains(w) && w.startsWith(activeHintPrefix)) {
+          return activeHintPrefix;
+        }
+      }
+    }
+    for (final w in level.words) {
+      if (!solvedWords.contains(w)) {
+        final hints = hintedLetters[w];
+        if (hints != null && hints.contains(0)) {
+          int count = 0;
+          while (hints.contains(count) && count < w.length) {
+            count++;
+          }
+          if (count > 0 && count < w.length) {
+            return w.substring(0, count);
+          }
+        }
+      }
+    }
+    return '';
+  }
+
+  int get totalLevels => packs.fold<int>(0, (sum, p) => sum + p.levels.length);
+
+  int get currentOverallLevel {
+    int count = 0;
+    for (int i = 0; i < packIndex && i < packs.length; i++) {
+      count += packs[i].levels.length;
+    }
+    return count + levelIndex + 1;
+  }
+
   WordConnectPlaying copyWith({
     int? packIndex,
     int? levelIndex,
@@ -65,6 +104,7 @@ class WordConnectPlaying extends WordConnectState {
     Set<String>? solvedWords,
     Map<String, Set<int>>? hintedLetters,
     String? currentAttempt,
+    String? activeHintPrefix,
     WordFeedback? feedback,
     bool? isCompleted,
     int? hintsUsed,
@@ -82,6 +122,7 @@ class WordConnectPlaying extends WordConnectState {
       solvedWords: solvedWords ?? this.solvedWords,
       hintedLetters: hintedLetters ?? this.hintedLetters,
       currentAttempt: currentAttempt ?? this.currentAttempt,
+      activeHintPrefix: activeHintPrefix ?? this.activeHintPrefix,
       feedback: feedback ?? this.feedback,
       isCompleted: isCompleted ?? this.isCompleted,
       hintsUsed: hintsUsed ?? this.hintsUsed,
@@ -164,6 +205,20 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     ));
   }
 
+  Timer? _feedbackTimer;
+
+  void _scheduleFeedbackDismiss([Duration duration = const Duration(milliseconds: 1500)]) {
+    _feedbackTimer?.cancel();
+    _feedbackTimer = Timer(duration, () {
+      if (state is WordConnectPlaying) {
+        final s = state as WordConnectPlaying;
+        if (s.feedback.text.isNotEmpty) {
+          emit(s.copyWith(feedback: const WordFeedback()));
+        }
+      }
+    });
+  }
+
   void updateAttempt(String word) {
     if (state is WordConnectPlaying) {
       final s = state as WordConnectPlaying;
@@ -177,10 +232,21 @@ class WordConnectCubit extends Cubit<WordConnectState> {
   void clearAttempt() {
     if (state is WordConnectPlaying) {
       final s = state as WordConnectPlaying;
-      emit(s.copyWith(
-        currentAttempt: '',
-        feedback: const WordFeedback(),
-      ));
+      final hintPrefix = s.effectiveHintPrefix;
+      if (hintPrefix.isNotEmpty &&
+          s.currentAttempt.length > hintPrefix.length &&
+          s.currentAttempt.startsWith(hintPrefix)) {
+        emit(s.copyWith(
+          currentAttempt: hintPrefix,
+          feedback: const WordFeedback(),
+        ));
+      } else {
+        emit(s.copyWith(
+          currentAttempt: '',
+          activeHintPrefix: '',
+          feedback: const WordFeedback(),
+        ));
+      }
     }
   }
 
@@ -194,13 +260,15 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     // Check if already found
     if (s.solvedWords.contains(candidate)) {
       AudioController.instance.playWrongWord();
+      final restored = s.effectiveHintPrefix;
       emit(s.copyWith(
-        currentAttempt: '',
+        currentAttempt: restored,
         feedback: const WordFeedback(
           text: 'Буга чейин табылган!',
           type: FeedbackType.warning,
         ),
       ));
+      _scheduleFeedbackDismiss();
       return;
     }
 
@@ -234,9 +302,15 @@ class WordConnectCubit extends Cubit<WordConnectState> {
         AudioController.instance.playWordSolved();
       }
 
+      String newActiveHint = s.activeHintPrefix;
+      if (candidate.startsWith(s.activeHintPrefix) || candidate == s.activeHintPrefix) {
+        newActiveHint = '';
+      }
+
       emit(s.copyWith(
         solvedWords: newSolved,
         currentAttempt: '',
+        activeHintPrefix: newActiveHint,
         feedback: const WordFeedback(
           text: 'Туура!',
           type: FeedbackType.success,
@@ -247,15 +321,18 @@ class WordConnectCubit extends Cubit<WordConnectState> {
         totalScore: newTotalScore,
         totalStars: newTotalStars,
       ));
+      _scheduleFeedbackDismiss();
     } else {
       AudioController.instance.playWrongWord();
+      final restored = s.effectiveHintPrefix;
       emit(s.copyWith(
-        currentAttempt: '',
+        currentAttempt: restored,
         feedback: const WordFeedback(
           text: 'Мындай сөз жок',
           type: FeedbackType.error,
         ),
       ));
+      _scheduleFeedbackDismiss();
     }
   }
 
@@ -285,30 +362,55 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     final unsolvedWords = s.level.words.where((w) => !s.solvedWords.contains(w)).toList();
     if (unsolvedWords.isEmpty) return;
 
-    final List<MapEntry<String, int>> unhinted = [];
-    for (final word in unsolvedWords) {
-      final alreadyHinted = s.hintedLetters[word] ?? {};
-      for (int i = 0; i < word.length; i++) {
-        if (!alreadyHinted.contains(i)) {
-          unhinted.add(MapEntry(word, i));
+    // Pick target word & letter index
+    String targetWord = '';
+    int letterIdx = -1;
+
+    // If current attempt is a prefix of an unsolved word, continue with that word
+    final currentPref = s.currentAttempt.toLowerCase().trim();
+    if (currentPref.isNotEmpty) {
+      for (final w in unsolvedWords) {
+        if (w.startsWith(currentPref) && w.length > currentPref.length) {
+          targetWord = w;
+          letterIdx = currentPref.length;
+          break;
         }
       }
     }
 
-    if (unhinted.isEmpty) return;
+    // Otherwise, pick the first unsolved word with an unhinted letter
+    if (targetWord.isEmpty) {
+      for (final w in unsolvedWords) {
+        final alreadyHinted = s.hintedLetters[w] ?? {};
+        for (int i = 0; i < w.length; i++) {
+          if (!alreadyHinted.contains(i)) {
+            targetWord = w;
+            letterIdx = i;
+            break;
+          }
+        }
+        if (targetWord.isNotEmpty) break;
+      }
+    }
 
-    final choice = unhinted.first;
-    final word = choice.key;
-    final letterIdx = choice.value;
+    if (targetWord.isEmpty || letterIdx < 0) return;
+
+    final word = targetWord;
 
     AudioController.instance.playHint();
+    AudioController.instance.playLetterSelect();
+    HapticFeedback.lightImpact();
 
     final newHintedMap = Map<String, Set<int>>.from(s.hintedLetters);
-    final wordHints = Set<int>.from(newHintedMap[word] ?? {})..add(letterIdx);
+    final wordHints = Set<int>.from(newHintedMap[word] ?? {});
+    for (int i = 0; i <= letterIdx; i++) {
+      wordHints.add(i);
+    }
     newHintedMap[word] = wordHints;
 
+    final isWordFullyHinted = wordHints.length >= word.length;
     final newSolved = Set<String>.from(s.solvedWords);
-    if (wordHints.length >= word.length) {
+    if (isWordFullyHinted) {
       newSolved.add(word);
     }
 
@@ -318,7 +420,6 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     int newTotalScore = s.totalScore;
     int newTotalStars = s.totalStars;
     final newHintsUsed = s.hintsUsed + 1;
-    final remainingAfterThis = (WordConnectPlaying.maxHintsPerLevel - newHintsUsed).clamp(0, WordConnectPlaying.maxHintsPerLevel);
 
     if (isAllSolved) {
       AudioController.instance.playLevelComplete();
@@ -336,22 +437,35 @@ class WordConnectCubit extends Cubit<WordConnectState> {
 
       newTotalScore = updatedProgress.totalScore;
       newTotalStars = updatedProgress.totalStars;
+    } else if (isWordFullyHinted) {
+      AudioController.instance.playWordSolved();
     }
+
+    final newAttempt = isWordFullyHinted ? '' : word.substring(0, letterIdx + 1);
+    final feedback = isWordFullyHinted
+        ? WordFeedback(
+            text: '«${word.toUpperCase()}» табылды! 🎉',
+            type: FeedbackType.success,
+          )
+        : const WordFeedback();
 
     emit(s.copyWith(
       hintedLetters: newHintedMap,
       solvedWords: newSolved,
       hintsUsed: newHintsUsed,
-      feedback: WordFeedback(
-        text: 'Кеңеш: «${word[letterIdx].toUpperCase()}» тамгасы ачылды! (Калды: $remainingAfterThis)',
-        type: FeedbackType.warning,
-      ),
+      currentAttempt: newAttempt,
+      activeHintPrefix: newAttempt,
+      feedback: feedback,
       isCompleted: isAllSolved,
       starsEarned: starsEarned,
       levelScore: levelScore,
       totalScore: newTotalScore,
       totalStars: newTotalStars,
     ));
+
+    if (isWordFullyHinted) {
+      _scheduleFeedbackDismiss();
+    }
   }
 
   Future<void> nextLevel() async {
@@ -379,5 +493,11 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       totalScore: s.totalScore,
       totalStars: s.totalStars,
     );
+  }
+
+  @override
+  Future<void> close() {
+    _feedbackTimer?.cancel();
+    return super.close();
   }
 }

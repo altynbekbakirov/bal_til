@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/audio/audio_controller.dart';
@@ -31,12 +31,27 @@ class _WordConnectView extends StatelessWidget {
         title: BlocBuilder<WordConnectCubit, WordConnectState>(
           builder: (context, state) {
             if (state is WordConnectPlaying) {
-              return Text(
-                '${state.packs[state.packIndex].title} • ${state.levelIndex + 1}-деңгээл',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Сөздү тап',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  Text(
+                    '${state.currentOverallLevel}/${state.totalLevels}-деңгээл (${state.levelIndex + 1}/${state.packs[state.packIndex].levels.length})',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryDarkAmber),
+                  ),
+                ],
               );
             }
-            return const Text('Сөз кура');
+            return const Text(
+              'Сөздү тап',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            );
           },
         ),
         leading: IconButton(
@@ -124,9 +139,9 @@ class _WordConnectView extends StatelessWidget {
 
                   // Attempt Preview & Feedback Banner
                   Container(
-                    height: 52,
+                    constraints: const BoxConstraints(minHeight: 52),
                     alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildFeedbackOrAttempt(state, context),
                   ),
 
@@ -247,7 +262,7 @@ class _WordConnectView extends StatelessWidget {
       }
 
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(20),
@@ -260,12 +275,17 @@ class _WordConnectView extends StatelessWidget {
           children: [
             Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-            Text(
-              state.feedback.text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: textColor,
+            Flexible(
+              child: Text(
+                state.feedback.text,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
             ),
           ],
@@ -289,6 +309,8 @@ class _WordConnectView extends StatelessWidget {
         ),
         child: Text(
           state.currentAttempt.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -406,10 +428,10 @@ class _WordConnectView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Баардык сөздөр туура табылды!',
+                Text(
+                  '${state.currentOverallLevel}/${state.totalLevels}-деңгээл ийгиликтүү бүттү!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

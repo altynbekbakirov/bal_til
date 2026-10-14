@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/audio/audio_controller.dart';
@@ -27,16 +27,43 @@ class _WordWheelState extends State<WordWheel> {
   Offset? _currentTouch;
   double _dragDistance = 0.0;
   Offset _lastPos = Offset.zero;
+  int? _initialTouchedNode;
+  bool _isNewSwipe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncSelectedWithAttempt();
+  }
 
   @override
   void didUpdateWidget(covariant WordWheel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the attempt was cleared from outside (after submit or reset), clear selected nodes
-    if (widget.currentAttempt.isEmpty && _selectedIndices.isNotEmpty) {
-      setState(() {
-        _selectedIndices.clear();
-        _currentTouch = null;
-      });
+    if (widget.currentAttempt != oldWidget.currentAttempt || widget.letters != oldWidget.letters) {
+      final currentSelectedWord = _selectedIndices.map((i) => widget.letters[i]).join().toLowerCase();
+      if (currentSelectedWord != widget.currentAttempt.toLowerCase()) {
+        setState(() {
+          _syncSelectedWithAttempt();
+        });
+      }
+    }
+  }
+
+  void _syncSelectedWithAttempt() {
+    _selectedIndices.clear();
+    _currentTouch = null;
+    if (widget.currentAttempt.isNotEmpty) {
+      final attemptChars = widget.currentAttempt.toLowerCase().split('');
+      final usedIndices = <int>{};
+      for (final char in attemptChars) {
+        for (int i = 0; i < widget.letters.length; i++) {
+          if (!usedIndices.contains(i) && widget.letters[i].toLowerCase() == char) {
+            _selectedIndices.add(i);
+            usedIndices.add(i);
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -55,6 +82,17 @@ class _WordWheelState extends State<WordWheel> {
     return positions;
   }
 
+  int? _findNodeAt(Offset localPos, Size size) {
+    final centers = _calculateNodeCenters(size);
+    const nodeRadius = 36.0;
+    for (int i = 0; i < centers.length; i++) {
+      if ((localPos - centers[i]).distance <= nodeRadius) {
+        return i;
+      }
+    }
+    return null;
+  }
+
   void _handleTouch(Offset localPos, Size size) {
     final centers = _calculateNodeCenters(size);
     const nodeRadius = 36.0;
@@ -69,8 +107,8 @@ class _WordWheelState extends State<WordWheel> {
           });
           final word = _selectedIndices.map((idx) => widget.letters[idx]).join();
           widget.onWordChanged(word);
-        } else if (_dragDistance <= 15 && _selectedIndices.isNotEmpty && _selectedIndices.last == i && _selectedIndices.length > 1) {
-          // Tap on last selected letter -> backspace
+        } else if (_dragDistance <= 15 && _selectedIndices.isNotEmpty && _selectedIndices.last == i) {
+          // Tap on last selected letter -> backspace / toggle off
           HapticFeedback.lightImpact();
           setState(() {
             _selectedIndices.removeLast();
@@ -95,11 +133,19 @@ class _WordWheelState extends State<WordWheel> {
             _dragDistance = 0.0;
             _lastPos = details.localPosition;
             _currentTouch = details.localPosition;
-            // Only clear selection if we were starting a completely new attempt
+            _initialTouchedNode = _findNodeAt(details.localPosition, size);
+            _isNewSwipe = false;
+
             if (widget.currentAttempt.isEmpty) {
               _selectedIndices.clear();
             }
-            _handleTouch(details.localPosition, size);
+
+            if (_initialTouchedNode != null) {
+              // If touched node is the last selected or attempt is empty, handle immediately
+              if (_selectedIndices.isEmpty || _selectedIndices.last == _initialTouchedNode) {
+                _handleTouch(details.localPosition, size);
+              }
+            }
           },
           onPanUpdate: (details) {
             _dragDistance += (details.localPosition - _lastPos).distance;
@@ -107,17 +153,37 @@ class _WordWheelState extends State<WordWheel> {
             setState(() {
               _currentTouch = details.localPosition;
             });
+
+            // If user dragged (> 15) and started from an unselected node, start a fresh swipe from that node
+            if (_dragDistance > 15 &&
+                !_isNewSwipe &&
+                _initialTouchedNode != null &&
+                !_selectedIndices.contains(_initialTouchedNode)) {
+              _isNewSwipe = true;
+              _selectedIndices.clear();
+              _selectedIndices.add(_initialTouchedNode!);
+              final word = _selectedIndices.map((idx) => widget.letters[idx]).join();
+              widget.onWordChanged(word);
+            }
+
             _handleTouch(details.localPosition, size);
           },
           onPanEnd: (_) {
             setState(() {
               _currentTouch = null;
             });
+
+            // If it was a tap (_dragDistance <= 15) on a node that wasn't handled yet:
+            if (_dragDistance <= 15 &&
+                _initialTouchedNode != null &&
+                !_selectedIndices.contains(_initialTouchedNode)) {
+              _handleTouch(_lastPos, size);
+            }
+
             // If user swiped across multiple letters continuously, auto-submit on release
             if (_dragDistance > 30 && _selectedIndices.length >= 2) {
               widget.onWordCompleted();
             }
-            // If it was a tap (_dragDistance <= 30), keep nodes selected so user can tap next letters!
           },
           child: CustomPaint(
             size: size,

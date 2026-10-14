@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../configs/routes.dart';
@@ -226,7 +226,7 @@ class HomeScreen extends StatelessWidget {
                 delegate: SliverChildListDelegate([
                   MenuCardButton(
                     title: 'Сөздү тап',
-                    subtitle: 'Тамгаларды кошуп сөз кура (Word Connect)',
+                    subtitle: 'Тамгаларды кошуп сөз кура • 34 деңгээл',
                     icon: Icons.extension_rounded,
                     primaryColor: const Color(0xFFF59E0B),
                     secondaryColor: const Color(0xFFEA580C),
@@ -240,7 +240,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   MenuCardButton(
                     title: 'Сөз издөө',
-                    subtitle: 'Торчодогу жашырылган сөздөрдү тап (Word Search)',
+                    subtitle: 'Торчодогу сөздөрдү тап • 3 деңгээл',
                     icon: Icons.grid_view_rounded,
                     primaryColor: const Color(0xFF10B981),
                     secondaryColor: const Color(0xFF059669),
