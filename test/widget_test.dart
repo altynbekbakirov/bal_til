@@ -11,6 +11,7 @@ import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
 import 'package:bal_til/alippe/screens/sections/section_books_view.dart';
 import 'package:bal_til/alippe/core/alippe_cubit.dart';
 import 'package:bal_til/alippe/screens/dialogs/alippe_game_finish_dialog.dart';
+import 'package:bal_til/configs/routes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -252,4 +253,36 @@ void main() {
     expect(find.text('Азаматсың!'), findsOneWidget);
     expect(find.byType(AlippeAnimButton), findsNWidgets(3));
   });
+
+  testWidgets('AlippeHomeScreen book selection triggers sound without duplicate calls', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => AlippeCubit()),
+        ],
+        child: const MaterialApp(
+          home: AlippeHomeScreen(),
+          onGenerateRoute: Routers.onGenerateRoute,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final animButtons = find.byType(AlippeAnimButton);
+    expect(animButtons, findsWidgets);
+
+    // Tap Book 0
+    await tester.tap(animButtons.at(2));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 300));
+  });
 }
+

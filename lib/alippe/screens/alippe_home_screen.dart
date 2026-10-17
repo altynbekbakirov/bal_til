@@ -29,7 +29,6 @@ class AlippeHomeScreen extends StatelessWidget {
   }
 
   void _onBookTap(BuildContext context, AlippeBookModel book) {
-    AlippeAudio().playTap();
     if (book.section2Id != null) {
       Navigator.of(context).pushNamed('/book', arguments: book.bookId);
     } else {

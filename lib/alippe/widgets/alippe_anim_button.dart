@@ -61,7 +61,7 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
   void _playSoundAndAction() {
     if (_hasTriggeredTap) return;
     _hasTriggeredTap = true;
-    Future.delayed(const Duration(milliseconds: 250), () {
+    Future.delayed(const Duration(milliseconds: 350), () {
       if (mounted) {
         _hasTriggeredTap = false;
       }
@@ -98,20 +98,19 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    _hasTriggeredTap = false;
     _controller.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
-    _playSoundAndAction();
-  }
-
-  void _handleTap() {
-    _playSoundAndAction();
+    _controller.reverse();
   }
 
   void _handleTapCancel() {
     _controller.reverse();
+  }
+
+  void _handleTap() {
+    _playSoundAndAction();
   }
 
   @override
