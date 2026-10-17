@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bal_til/alippe/widgets/alippe_zoom_item.dart';
 import 'package:bal_til/alippe/widgets/alippe_anim_button.dart';
 import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
+import 'package:bal_til/alippe/screens/sections/section_books_view.dart';
 import 'package:bal_til/alippe/core/alippe_cubit.dart';
 
 void main() {
@@ -118,6 +119,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Destination Screen'), findsOneWidget);
+  });
+
+  testWidgets('SectionBooksView plays shape sound on click (triangle & square)', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SectionBooksView(sectionId: 3),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final leftBtn = find.byKey(const ValueKey('sec_3_left_0_true'));
+    final rightBtn = find.byKey(const ValueKey('sec_3_right_1_true'));
+
+    expect(leftBtn, findsOneWidget);
+    expect(rightBtn, findsOneWidget);
+
+    final leftWidget = tester.widget<AlippeAnimButton>(leftBtn);
+    expect(leftWidget.soundAsset, contains('boy_uchburchtuk.mp3'));
+
+    final rightWidget = tester.widget<AlippeAnimButton>(rightBtn);
+    expect(rightWidget.soundAsset, contains('boy_tortburchtuk.mp3'));
+
+    // Tap left item (triangle)
+    await tester.tap(leftBtn, warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('SectionBooksView plays color sound on click (white & black balloons)', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SectionBooksView(sectionId: 2),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final leftBtn = find.byKey(const ValueKey('sec_2_left_0_true'));
+    final rightBtn = find.byKey(const ValueKey('sec_2_right_1_true'));
+
+    expect(leftBtn, findsOneWidget);
+    expect(rightBtn, findsOneWidget);
+
+    final leftWidget = tester.widget<AlippeAnimButton>(leftBtn);
+    expect(leftWidget.soundAsset, contains('boy_AK.mp3'));
+
+    final rightWidget = tester.widget<AlippeAnimButton>(rightBtn);
+    expect(rightWidget.soundAsset, contains('boy_kara.mp3'));
+
+    // Tap left item (white balloon)
+    await tester.tap(leftBtn, warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 300));
   });
 
   testWidgets('HomeScreen stats row renders without overflow on narrow width', (WidgetTester tester) async {

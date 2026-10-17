@@ -59,7 +59,12 @@ class _SectionBooksViewState extends State<SectionBooksView> {
     }
   }
 
-  int get _totalPages => (_items.length / 2).ceil();
+  int get _totalPages {
+    if (widget.sectionId == 6 || widget.sectionId == 7) {
+      return _items.length - 1;
+    }
+    return (_items.length / 2).ceil();
+  }
 
   void _nextPage() {
     if (_pageIndex < _totalPages - 1) {
@@ -98,11 +103,26 @@ class _SectionBooksViewState extends State<SectionBooksView> {
 
   @override
   Widget build(BuildContext context) {
-    final leftIdx = _pageIndex * 2;
-    final rightIdx = leftIdx + 1;
+    final isBoy = context.watch<AlippeCubit>().state.boyActive;
+    final sounds = AlippeData.getSectionSounds(widget.sectionId, isBoy);
+    final texts = AlippeData.getSectionSpokenTexts(widget.sectionId);
+
+    final isBodySection = widget.sectionId == 6 || widget.sectionId == 7;
+    final leftIdx = isBodySection ? 0 : _pageIndex * 2;
+    final rightIdx = isBodySection ? _pageIndex + 1 : leftIdx + 1;
 
     final leftItem = leftIdx < _items.length ? _items[leftIdx] : null;
     final rightItem = rightIdx < _items.length ? _items[rightIdx] : null;
+
+    final leftSound = isBodySection
+        ? (widget.sectionId == 7 && sounds.isNotEmpty ? sounds[0] : null)
+        : (leftIdx < sounds.length ? sounds[leftIdx] : null);
+    final leftText = isBodySection
+        ? (widget.sectionId == 7 && texts.isNotEmpty ? texts[0] : null)
+        : (leftIdx < texts.length ? texts[leftIdx] : null);
+
+    final rightSound = rightIdx < sounds.length ? sounds[rightIdx] : null;
+    final rightText = rightIdx < texts.length ? texts[rightIdx] : null;
 
     return AlippeContainer(
       child: AlippeBookBase(
@@ -117,7 +137,10 @@ class _SectionBooksViewState extends State<SectionBooksView> {
                 padding: const EdgeInsets.all(24.0),
                 child: leftItem != null
                     ? AlippeAnimButton(
+                        key: ValueKey('sec_${widget.sectionId}_left_${leftIdx}_$isBoy'),
                         imageAsset: leftItem,
+                        soundAsset: leftSound,
+                        spokenText: leftText,
                       )
                     : const SizedBox.shrink(),
               ),
@@ -131,7 +154,10 @@ class _SectionBooksViewState extends State<SectionBooksView> {
                 padding: const EdgeInsets.all(24.0),
                 child: rightItem != null
                     ? AlippeAnimButton(
+                        key: ValueKey('sec_${widget.sectionId}_right_${rightIdx}_$isBoy'),
                         imageAsset: rightItem,
+                        soundAsset: rightSound,
+                        spokenText: rightText,
                       )
                     : const SizedBox.shrink(),
               ),

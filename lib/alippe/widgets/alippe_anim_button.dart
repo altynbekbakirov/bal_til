@@ -61,6 +61,11 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
   void _playSoundAndAction() {
     if (_hasTriggeredTap) return;
     _hasTriggeredTap = true;
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (mounted) {
+        _hasTriggeredTap = false;
+      }
+    });
 
     if (widget.soundAsset != null && widget.soundAsset!.isNotEmpty) {
       AlippeAudio().playSfx(widget.soundAsset!).catchError((_) {
