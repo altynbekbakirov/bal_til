@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../configs/routes.dart';
 import '../../core/alippe_audio.dart';
 import '../../core/alippe_constants.dart';
 import '../../widgets/alippe_anim_button.dart';
@@ -8,22 +9,36 @@ class AlippeGameFinishDialog extends StatefulWidget {
   final int score;
   final VoidCallback onRestart;
   final VoidCallback onNext;
-  final VoidCallback onHome;
+  final VoidCallback? onHome;
 
   const AlippeGameFinishDialog({
     super.key,
     required this.score,
     required this.onRestart,
     required this.onNext,
-    required this.onHome,
+    this.onHome,
   });
+
+  static void navigateToAlippeHome(BuildContext context) {
+    bool foundHome = false;
+    Navigator.of(context).popUntil((route) {
+      if (route.settings.name == '/home' || route.settings.name == Routers.alippeHome) {
+        foundHome = true;
+        return true;
+      }
+      return route.isFirst;
+    });
+    if (!foundHome) {
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
+  }
 
   static Future<void> show({
     required BuildContext context,
     required int score,
     required VoidCallback onRestart,
     required VoidCallback onNext,
-    required VoidCallback onHome,
+    VoidCallback? onHome,
   }) {
     AlippeAudio().playFinish();
     return showDialog<void>(
@@ -34,7 +49,7 @@ class AlippeGameFinishDialog extends StatefulWidget {
         score: score,
         onRestart: onRestart,
         onNext: onNext,
-        onHome: onHome,
+        onHome: onHome ?? () => navigateToAlippeHome(context),
       ),
     );
   }
@@ -297,7 +312,11 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
           imageAsset: AlippeAssets.finishListBtn,
           onPress: () {
             Navigator.of(context).pop();
-            widget.onHome();
+            if (widget.onHome != null) {
+              widget.onHome!();
+            } else {
+              AlippeGameFinishDialog.navigateToAlippeHome(context);
+            }
           },
         ),
         SizedBox(width: spacing),

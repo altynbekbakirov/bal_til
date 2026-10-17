@@ -111,10 +111,10 @@ class _Section10ViewState extends State<Section10View> {
                   });
                 },
                 onNext: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  AlippeGameFinishDialog.navigateToAlippeHome(context);
                 },
                 onHome: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  AlippeGameFinishDialog.navigateToAlippeHome(context);
                 },
               );
             }

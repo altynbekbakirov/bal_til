@@ -64,7 +64,7 @@ class _Section9ViewState extends State<Section9View> {
                 Navigator.of(context).pushReplacementNamed('/section', arguments: 10);
               },
               onHome: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                AlippeGameFinishDialog.navigateToAlippeHome(context);
               },
             );
           }

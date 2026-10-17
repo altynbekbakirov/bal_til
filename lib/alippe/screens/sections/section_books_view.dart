@@ -87,7 +87,7 @@ class _SectionBooksViewState extends State<SectionBooksView> {
           Navigator.of(context).pushReplacementNamed('/section', arguments: nextSec);
         },
         onHome: () {
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          AlippeGameFinishDialog.navigateToAlippeHome(context);
         },
       );
     }

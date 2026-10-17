@@ -83,21 +83,32 @@ class AlippeApp extends StatelessWidget {
         onGenerateRoute: (settings) {
           switch (settings.name) {
             case '/':
-              return MaterialPageRoute(builder: (_) => const AlippeSplashScreen());
+              return MaterialPageRoute(
+                builder: (_) => const AlippeSplashScreen(),
+                settings: settings,
+              );
             case '/home':
-              return MaterialPageRoute(builder: (_) => const AlippeHomeScreen());
+              return MaterialPageRoute(
+                builder: (_) => const AlippeHomeScreen(),
+                settings: settings,
+              );
             case '/book':
               final bookId = settings.arguments as int? ?? 0;
               return MaterialPageRoute(
                 builder: (_) => AlippeBookScreen(bookId: bookId),
+                settings: settings,
               );
             case '/section':
               final sectionId = settings.arguments as int? ?? 0;
               return MaterialPageRoute(
                 builder: (_) => AlippeSectionScreen(sectionId: sectionId),
+                settings: settings,
               );
             default:
-              return MaterialPageRoute(builder: (_) => const AlippeHomeScreen());
+              return MaterialPageRoute(
+                builder: (_) => const AlippeHomeScreen(),
+                settings: settings,
+              );
           }
         },
       ),

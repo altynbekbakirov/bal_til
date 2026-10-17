@@ -254,6 +254,37 @@ void main() {
     expect(find.byType(AlippeAnimButton), findsNWidgets(3));
   });
 
+  testWidgets('AlippeGameFinishDialog menu button triggers onHome redirect to alippe home', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    bool homeClicked = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AlippeGameFinishDialog(
+            score: 3,
+            onRestart: () {},
+            onNext: () {},
+            onHome: () => homeClicked = true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final animButtons = find.byType(AlippeAnimButton);
+    expect(animButtons, findsNWidgets(3));
+    await tester.tap(animButtons.first);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(homeClicked, isTrue);
+  });
+
   testWidgets('AlippeHomeScreen book selection triggers sound without duplicate calls', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 360);
     tester.view.devicePixelRatio = 1.0;
