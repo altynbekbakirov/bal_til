@@ -81,6 +81,9 @@ class LetterItem {
   final String pic2;
   final String pic3;
   final String pic4;
+  final String letter;
+  final String word1;
+  final String word2;
 
   const LetterItem({
     required this.key,
@@ -88,6 +91,9 @@ class LetterItem {
     required this.pic2,
     required this.pic3,
     required this.pic4,
+    required this.letter,
+    required this.word1,
+    required this.word2,
   });
 }
 
@@ -196,16 +202,59 @@ class AlippeData {
     }
   }
 
+  static final List<({String letter, String word1, String word2})> _section0LetterDetails = [
+    (letter: 'А', word1: 'Ат', word2: 'Ай'),
+    (letter: 'Б', word1: 'Бант', word2: 'Балык'),
+    (letter: 'В', word1: 'Велосипед', word2: 'Вилка'),
+    (letter: 'Г', word1: 'Гүл', word2: 'Гитара'),
+    (letter: 'Д', word1: 'Дарбыз', word2: 'Дарак'),
+    (letter: 'Е', word1: 'Енот', word2: 'Ель'),
+    (letter: 'Ё', word1: 'Ёлка', word2: 'Ёж'),
+    (letter: 'Ж', word1: 'Жылкы', word2: 'Жылдыз'),
+    (letter: 'З', word1: 'Зебра', word2: 'Зонтик'),
+    (letter: 'И', word1: 'Ит', word2: 'Ийне'),
+    (letter: 'Й', word1: 'Йогурт', word2: 'Йод'),
+    (letter: 'К', word1: 'Көпөлөк', word2: 'Китеп'),
+    (letter: 'Л', word1: 'Лимон', word2: 'Лампочка'),
+    (letter: 'М', word1: 'Машина', word2: 'Мышык'),
+    (letter: 'Н', word1: 'Нан', word2: 'Нокот'),
+    (letter: 'Ң', word1: 'Коңгуроо', word2: 'Торпоң'),
+    (letter: 'О', word1: 'Орок', word2: 'Оюнчук'),
+    (letter: 'Ө', word1: 'Өрдөк', word2: 'Өрүк'),
+    (letter: 'П', word1: 'Пил', word2: 'Поезд'),
+    (letter: 'Р', word1: 'Ракета', word2: 'Радио'),
+    (letter: 'С', word1: 'Саат', word2: 'Сабиз'),
+    (letter: 'Т', word1: 'Төө', word2: 'Топ'),
+    (letter: 'У', word1: 'Улак', word2: 'Учак'),
+    (letter: 'Ү', word1: 'Үй', word2: 'Үтүк'),
+    (letter: 'Ф', word1: 'Флаг', word2: 'Футбол'),
+    (letter: 'Х', word1: 'Халат', word2: 'Хлеб'),
+    (letter: 'Ц', word1: 'Цирк', word2: 'Цветок'),
+    (letter: 'Ч', word1: 'Чака', word2: 'Чөйчөк'),
+    (letter: 'Ш', word1: 'Шахмат', word2: 'Шыпыргы'),
+    (letter: 'Щ', word1: 'Щетка', word2: 'Щит'),
+    (letter: 'Ъ', word1: 'Ажыратуу белгиси', word2: 'Ажыратуу белгиси'),
+    (letter: 'Ы', word1: 'Ымыркай', word2: 'Ышкын'),
+    (letter: 'Ь', word1: 'Ичкертүү белгиси', word2: 'Ичкертүү белгиси'),
+    (letter: 'Э', word1: 'Эчки', word2: 'Элик'),
+    (letter: 'Ю', word1: 'Юбка', word2: 'Юрта'),
+    (letter: 'Я', word1: 'Яблоко', word2: 'Якорь'),
+  ];
+
   // Section 0: 36 alphabet letter items
   static List<LetterItem> get section0Items {
     return List.generate(36, (index) {
       final folder = index + 1;
+      final info = _section0LetterDetails[index];
       return LetterItem(
         key: 'letter_$folder',
         pic1: 'assets/alippe/images/books/book1/section1/$folder/letter1.png',
         pic2: 'assets/alippe/images/books/book1/section1/$folder/letter2.png',
         pic3: 'assets/alippe/images/books/book1/section1/$folder/pic1.png',
         pic4: 'assets/alippe/images/books/book1/section1/$folder/pic2.png',
+        letter: info.letter,
+        word1: info.word1,
+        word2: info.word2,
       );
     });
   }

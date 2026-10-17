@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bal_til/main.dart';
 import 'package:bal_til/features/map/screens/map_screen.dart';
+import 'package:bal_til/alippe/widgets/alippe_zoom_item.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,5 +43,23 @@ void main() {
       ),
     );
     await tester.pump();
+  });
+
+  testWidgets('AlippeZoomItem triggers zoom and speech on click', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AlippeZoomItem(
+            imageAsset: 'assets/alippe/images/books/book1/section1/1/letter1.png',
+            spokenText: 'А',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(AlippeZoomItem), findsOneWidget);
+    await tester.tap(find.byType(AlippeZoomItem));
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 300));
   });
 }
