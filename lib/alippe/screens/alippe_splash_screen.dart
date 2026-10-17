@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/audio/audio_controller.dart';
 import '../core/alippe_audio.dart';
 import '../core/alippe_constants.dart';
 import '../core/alippe_cubit.dart';
@@ -20,10 +21,15 @@ class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
   }
 
   Future<void> _initAndNavigate() async {
+    await AudioController.instance.stopAll();
+
+    if (!mounted) return;
     final cubit = context.read<AlippeCubit>();
     await cubit.init();
     await AlippeAudio().init();
-    await AlippeAudio().startMusic();
+    if (AlippeAudio().isMusicEnabled) {
+      await AlippeAudio().startMusic();
+    }
 
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;

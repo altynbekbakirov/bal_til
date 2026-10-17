@@ -6,10 +6,33 @@ import 'package:bal_til/features/word_connect/cubit/word_connect_cubit.dart';
 import 'package:bal_til/features/word_search/cubit/word_search_cubit.dart';
 import 'package:bal_til/data/models/models.dart';
 
+import 'package:flutter/services.dart';
 import 'package:bal_til/core/audio/audio_controller.dart';
+import 'package:bal_til/core/audio/audio_cubit.dart';
+import 'package:bal_til/alippe/core/alippe_audio.dart';
+import 'package:bal_til/alippe/core/alippe_cubit.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('com.ryanheise.just_audio.methods'),
+      (MethodCall methodCall) async {
+        switch (methodCall.method) {
+          case 'init':
+            return {'id': methodCall.arguments?['id'] ?? 'mock_player'};
+          case 'load':
+            return {'duration': 1000000};
+          case 'disposeAllPlayers':
+            return <dynamic, dynamic>{};
+          default:
+            return <dynamic, dynamic>{};
+        }
+      },
+    );
+  });
 
   group('ScoreRepository & ScoreCubit', () {
     setUp(() {
@@ -253,6 +276,73 @@ void main() {
       final pos = await repo.getWordSearchProgress();
       expect(pos.categoryIndex, 0);
       expect(pos.levelIndex, 0);
+    });
+  });
+
+  group('Shared Audio Settings (Bal Til & Alippe)', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      AudioController.instance.isSoundEnabled = false;
+      AudioController.instance.isMusicEnabled = false;
+      AlippeAudio().isSoundEnabled = false;
+      AlippeAudio().isMusicEnabled = false;
+    });
+
+    test('AudioCubit toggleMusic toggles music for both AudioController and AlippeAudio', () async {
+      final cubit = AudioCubit();
+      await cubit.loadPreferences();
+
+      // Default is enabled
+      expect(cubit.state.isMusicEnabled, true);
+      expect(AudioController.instance.isMusicEnabled, true);
+      expect(AlippeAudio().isMusicEnabled, true);
+
+      // Toggle off
+      await cubit.toggleMusic();
+      expect(cubit.state.isMusicEnabled, false);
+      expect(AudioController.instance.isMusicEnabled, false);
+      expect(AlippeAudio().isMusicEnabled, false);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('music_enabled'), false);
+
+      // Toggle back on
+      await cubit.toggleMusic();
+      expect(cubit.state.isMusicEnabled, true);
+      expect(AudioController.instance.isMusicEnabled, true);
+      expect(AlippeAudio().isMusicEnabled, true);
+      expect(prefs.getBool('music_enabled'), true);
+    });
+
+    test('AlippeCubit volume slider synchronizes global music_enabled and sound_enabled', () async {
+      final alippeCubit = AlippeCubit();
+      await alippeCubit.init();
+
+      // Setting volume to 0 turns off music globally
+      await alippeCubit.setMusValue(0.0);
+      expect(AlippeAudio().isMusicEnabled, false);
+      expect(AudioController.instance.isMusicEnabled, false);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('music_enabled'), false);
+
+      // Setting volume above 0 turns music on globally
+      await alippeCubit.setMusValue(0.8);
+      expect(AlippeAudio().isMusicEnabled, true);
+      expect(AudioController.instance.isMusicEnabled, true);
+      expect(prefs.getBool('music_enabled'), true);
+
+      // Setting sound volume to 0 turns off sound globally
+      await alippeCubit.setSndValue(0.0);
+      expect(AlippeAudio().isSoundEnabled, false);
+      expect(AudioController.instance.isSoundEnabled, false);
+      expect(prefs.getBool('sound_enabled'), false);
+
+      // Setting sound volume above 0 turns sound on globally
+      await alippeCubit.setSndValue(0.6);
+      expect(AlippeAudio().isSoundEnabled, true);
+      expect(AudioController.instance.isSoundEnabled, true);
+      expect(prefs.getBool('sound_enabled'), true);
     });
   });
 }

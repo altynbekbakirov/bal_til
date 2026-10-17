@@ -47,7 +47,7 @@ class AlippeHomeScreen extends StatelessWidget {
               AlippeSidebar(
                 onSettings: () => AlippeSettingsDialog.show(context),
                 onBack: () async {
-                  await AlippeAudio().stopMusic();
+                  await AlippeAudio().stopAll();
                   await SystemChrome.setPreferredOrientations([
                     DeviceOrientation.portraitUp,
                     DeviceOrientation.portraitDown,
@@ -55,7 +55,9 @@ class AlippeHomeScreen extends StatelessWidget {
                   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                   if (context.mounted) {
                     Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
-                    AudioController.instance.playMenuMusic();
+                    if (AudioController.instance.isMusicEnabled) {
+                      AudioController.instance.playMenuMusic();
+                    }
                   }
                 },
                 onPlay: () {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../alippe/core/alippe_audio.dart';
 import '../../../alippe/screens/alippe_splash_screen.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/audio/audio_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 
 class GameSelectionModal extends StatelessWidget {
@@ -18,7 +21,10 @@ class GameSelectionModal extends StatelessWidget {
   }
 
   static Future<void> launchAlippe(BuildContext context) async {
-    AudioController.instance.stopMenuMusic();
+    // 1. Completely silence Bal Til audio before switching
+    await AudioController.instance.stopAll();
+    await AlippeAudio().stopAll();
+
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -30,13 +36,22 @@ class GameSelectionModal extends StatelessWidget {
       MaterialPageRoute(builder: (_) => const AlippeSplashScreen()),
     );
 
-    // Revert to portrait and restore UI upon returning to Bal Til
+    // 2. Completely silence Alippe audio upon returning
+    await AlippeAudio().stopAll();
+
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    AudioController.instance.playMenuMusic();
+
+    // 3. Synchronize settings and resume Bal Til menu music only if music is enabled
+    if (context.mounted) {
+      await context.read<AudioCubit>().loadPreferences();
+      if (AudioController.instance.isMusicEnabled) {
+        AudioController.instance.playMenuMusic();
+      }
+    }
   }
 
   @override

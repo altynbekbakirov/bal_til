@@ -10,9 +10,12 @@ class AlippeAudio {
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _sfxPlayer = AudioPlayer();
 
-  double _musicVolume = 0.5;
-  double _soundVolume = 0.5;
+  double _musicVolume = 0.7;
+  double _soundVolume = 0.7;
   bool _isMusicInitialized = false;
+
+  bool isMusicEnabled = true;
+  bool isSoundEnabled = true;
 
   double get musicVolume => _musicVolume;
   double get soundVolume => _soundVolume;
@@ -29,11 +32,13 @@ class AlippeAudio {
   }
 
   Future<void> startMusic() async {
+    if (!isMusicEnabled || _musicVolume <= 0) return;
     try {
       if (!_isMusicInitialized) {
         await init();
       }
-      if (!_musicPlayer.playing && _musicVolume > 0) {
+      if (!_musicPlayer.playing) {
+        await _musicPlayer.setVolume(_musicVolume);
         await _musicPlayer.play();
       }
     } catch (e) {
@@ -49,6 +54,15 @@ class AlippeAudio {
     }
   }
 
+  Future<void> stopAll() async {
+    try {
+      await _musicPlayer.stop();
+      await _sfxPlayer.stop();
+    } catch (e) {
+      debugPrint('Error stopping all audio in Alippe: $e');
+    }
+  }
+
   Future<void> pauseMusic() async {
     try {
       await _musicPlayer.pause();
@@ -58,23 +72,45 @@ class AlippeAudio {
   }
 
   Future<void> resumeMusic() async {
+    if (!isMusicEnabled || _musicVolume <= 0) return;
     try {
-      if (_musicVolume > 0) {
-        await _musicPlayer.play();
-      }
+      await _musicPlayer.setVolume(_musicVolume);
+      await _musicPlayer.play();
     } catch (e) {
       debugPrint('Error resuming music: $e');
     }
   }
 
+  Future<void> setMusicEnabled(bool enabled) async {
+    isMusicEnabled = enabled;
+    if (!enabled) {
+      await stopMusic();
+    } else {
+      if (_musicVolume <= 0.05) _musicVolume = 0.7;
+      resumeMusic();
+    }
+  }
+
+  void setSoundEnabled(bool enabled) {
+    isSoundEnabled = enabled;
+    if (!enabled) {
+      try {
+        _sfxPlayer.stop();
+      } catch (_) {}
+    } else if (_soundVolume <= 0.05) {
+      _soundVolume = 0.7;
+    }
+  }
+
   Future<void> setMusicVolume(double volume) async {
     _musicVolume = volume.clamp(0.0, 1.0);
+    isMusicEnabled = _musicVolume > 0.05;
     try {
-      await _musicPlayer.setVolume(_musicVolume);
-      if (_musicVolume > 0 && !_musicPlayer.playing) {
-        await _musicPlayer.play();
-      } else if (_musicVolume == 0 && _musicPlayer.playing) {
-        await _musicPlayer.pause();
+      _musicPlayer.setVolume(_musicVolume);
+      if (isMusicEnabled && !_musicPlayer.playing) {
+        _musicPlayer.play();
+      } else if (!isMusicEnabled && _musicPlayer.playing) {
+        _musicPlayer.pause();
       }
     } catch (e) {
       debugPrint('Error setting music volume: $e');
@@ -83,10 +119,14 @@ class AlippeAudio {
 
   void setSoundVolume(double volume) {
     _soundVolume = volume.clamp(0.0, 1.0);
+    isSoundEnabled = _soundVolume > 0.05;
+    if (!isSoundEnabled) {
+      _sfxPlayer.stop();
+    }
   }
 
   Future<void> playSfx(String assetPath) async {
-    if (_soundVolume <= 0) return;
+    if (!isSoundEnabled || _soundVolume <= 0) return;
     try {
       await _sfxPlayer.setAsset(assetPath);
       await _sfxPlayer.setVolume(_soundVolume);

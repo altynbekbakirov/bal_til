@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/audio/audio_controller.dart';
 import 'alippe_audio.dart';
 
 class AlippeState {
@@ -10,8 +11,8 @@ class AlippeState {
   final int lastSection;
 
   const AlippeState({
-    this.musValue = 0.5,
-    this.sndValue = 0.5,
+    this.musValue = 0.7,
+    this.sndValue = 0.7,
     this.boyActive = true,
     this.scores = const [0, 0, 0, 0, 0, 0],
     this.lastSection = 0,
@@ -45,8 +46,14 @@ class AlippeCubit extends Cubit<AlippeState> {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    final mus = prefs.getDouble(_keyMusValue) ?? 0.5;
-    final snd = prefs.getDouble(_keySndValue) ?? 0.5;
+    final musicEnabled = prefs.getBool('music_enabled') ?? true;
+    final soundEnabled = prefs.getBool('sound_enabled') ?? true;
+    final savedMus = prefs.getDouble(_keyMusValue) ?? 0.7;
+    final savedSnd = prefs.getDouble(_keySndValue) ?? 0.7;
+
+    final mus = musicEnabled ? (savedMus > 0.05 ? savedMus : 0.7) : 0.0;
+    final snd = soundEnabled ? (savedSnd > 0.05 ? savedSnd : 0.7) : 0.0;
+
     final boy = prefs.getBool(_keyBoyActive) ?? true;
     final lastSec = prefs.getInt(_keyLastSection) ?? 0;
     final scoresRaw = prefs.getStringList(_keyScores);
@@ -56,8 +63,13 @@ class AlippeCubit extends Cubit<AlippeState> {
       loadedScores = scoresRaw.map((e) => int.tryParse(e) ?? 0).toList();
     }
 
+    AlippeAudio().isMusicEnabled = musicEnabled;
+    AlippeAudio().isSoundEnabled = soundEnabled;
     AlippeAudio().setMusicVolume(mus);
     AlippeAudio().setSoundVolume(snd);
+
+    AudioController.instance.isMusicEnabled = musicEnabled;
+    AudioController.instance.isSoundEnabled = soundEnabled;
 
     emit(state.copyWith(
       musValue: mus,
@@ -70,18 +82,38 @@ class AlippeCubit extends Cubit<AlippeState> {
 
   Future<void> setMusValue(double val) async {
     final clamped = val.clamp(0.0, 1.0);
-    AlippeAudio().setMusicVolume(clamped);
+    final isEnabled = clamped > 0.05;
+
+    AlippeAudio().isMusicEnabled = isEnabled;
+    await AlippeAudio().setMusicVolume(clamped);
+
+    AudioController.instance.isMusicEnabled = isEnabled;
+    if (!isEnabled) {
+      AudioController.instance.stopMenuMusic();
+      AudioController.instance.stopGameplayMusic();
+    }
+
     emit(state.copyWith(musValue: clamped));
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keyMusValue, clamped);
+    await prefs.setBool('music_enabled', isEnabled);
   }
 
   Future<void> setSndValue(double val) async {
     final clamped = val.clamp(0.0, 1.0);
+    final isEnabled = clamped > 0.05;
+
+    AlippeAudio().isSoundEnabled = isEnabled;
     AlippeAudio().setSoundVolume(clamped);
+
+    AudioController.instance.isSoundEnabled = isEnabled;
+
     emit(state.copyWith(sndValue: clamped));
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keySndValue, clamped);
+    await prefs.setBool('sound_enabled', isEnabled);
   }
 
   Future<void> setBoyActive(bool boy) async {

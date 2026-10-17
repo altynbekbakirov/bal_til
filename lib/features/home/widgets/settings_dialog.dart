@@ -1,12 +1,23 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 
-class SettingsDialog extends StatelessWidget {
+class SettingsDialog extends StatefulWidget {
   const SettingsDialog({super.key});
+
+  @override
+  State<SettingsDialog> createState() => _SettingsDialogState();
+}
+
+class _SettingsDialogState extends State<SettingsDialog> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AudioCubit>().loadPreferences();
+  }
 
   @override
   Widget build(BuildContext context) {

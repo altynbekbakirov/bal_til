@@ -50,6 +50,14 @@ class AudioController {
 
   Future<void> stopGameplayMusic() async => stopMenuMusic();
 
+  Future<void> stopAll() async {
+    try {
+      await _bgmPlayer.stop();
+      await _sfxPlayer.stop();
+      await _anthemPlayer.stop();
+    } catch (_) {}
+  }
+
   Future<void> playSfx(String assetPath) async {
     if (!isSoundEnabled) return;
     try {

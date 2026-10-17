@@ -5,7 +5,7 @@ import '../../core/alippe_cubit.dart';
 import '../../widgets/alippe_anim_button.dart';
 import 'alippe_info_dialog.dart';
 
-class AlippeSettingsDialog extends StatelessWidget {
+class AlippeSettingsDialog extends StatefulWidget {
   const AlippeSettingsDialog({super.key});
 
   static Future<void> show(BuildContext context) {
@@ -14,6 +14,17 @@ class AlippeSettingsDialog extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (_) => const AlippeSettingsDialog(),
     );
+  }
+
+  @override
+  State<AlippeSettingsDialog> createState() => _AlippeSettingsDialogState();
+}
+
+class _AlippeSettingsDialogState extends State<AlippeSettingsDialog> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AlippeCubit>().init();
   }
 
   @override
