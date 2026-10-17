@@ -1,15 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../configs/routes.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
+import '../widgets/game_selection_modal.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/settings_dialog.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShown = prefs.getBool('has_shown_game_selector') ?? false;
+    if (!hasShown && mounted) {
+      await prefs.setBool('has_shown_game_selector', true);
+      if (mounted) {
+        GameSelectionModal.show(context);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +92,18 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
+                    // Game Selector Icon Button
                     IconButton(
-                      icon: const Icon(Icons.settings_rounded, size: 30, color: Color(0xFF475569)),
+                      icon: const Icon(Icons.sports_esports_rounded, size: 28, color: Color(0xFFEA580C)),
+                      tooltip: 'Оюн тандаңыз (3–6 / 7–10 жаш)',
+                      onPressed: () {
+                        AudioController.instance.playButtonClick();
+                        GameSelectionModal.show(context);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.settings_rounded, size: 28, color: Color(0xFF475569)),
                       onPressed: () {
                         AudioController.instance.playButtonClick();
                         showDialog(
@@ -80,6 +113,81 @@ class HomeScreen extends StatelessWidget {
                       },
                     ),
                   ],
+                ),
+              ),
+            ),
+            // Alippe Quick Selection Banner
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: InkWell(
+                  onTap: () {
+                    AudioController.instance.playButtonClick();
+                    GameSelectionModal.show(context);
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFFDBA74), width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEA580C),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.child_care_rounded, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '«Алиппе» (3 – 6 жаш) оюну',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF9A3412),
+                                ),
+                              ),
+                              Text(
+                                'Бала бакча курагы үчүн сүрөттүү алиппе жана оюндар',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFFC2410C),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEA580C),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Тандоо ➜',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
