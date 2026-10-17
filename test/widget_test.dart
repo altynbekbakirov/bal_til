@@ -4,8 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bal_til/main.dart';
 import 'package:bal_til/features/map/screens/map_screen.dart';
 import 'package:bal_til/features/home/screens/home_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:bal_til/alippe/widgets/alippe_zoom_item.dart';
 import 'package:bal_til/alippe/widgets/alippe_anim_button.dart';
+import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
+import 'package:bal_til/alippe/core/alippe_cubit.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +89,35 @@ void main() {
     await tester.tap(find.byType(AlippeAnimButton));
     await tester.pump(const Duration(milliseconds: 150));
     await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('AlippeHomeScreen renders 9 interactive items with sound support', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AlippeHomeScreen(),
+          ),
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Destination Screen')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 6 book items + 3 sidebar items (settings, back, play) = 9 AlippeAnimButton items
+    expect(find.byType(AlippeAnimButton), findsNWidgets(9));
+
+    // Tap first book item
+    await tester.tap(find.byType(AlippeAnimButton).at(3));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Destination Screen'), findsOneWidget);
   });
 
   testWidgets('HomeScreen stats row renders without overflow on narrow width', (WidgetTester tester) async {

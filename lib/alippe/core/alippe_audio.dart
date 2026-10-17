@@ -11,6 +11,10 @@ class AlippeAudio {
   final List<AudioPlayer> _sfxPlayers = List.generate(4, (_) => AudioPlayer());
   int _currentSfxIndex = 0;
 
+  final List<AudioPlayer> _tapPlayers = List.generate(2, (_) => AudioPlayer());
+  int _currentTapIndex = 0;
+  bool _areTapPlayersLoaded = false;
+
   double _musicVolume = 0.7;
   double _soundVolume = 0.7;
   bool _isMusicInitialized = false;
@@ -24,12 +28,25 @@ class AlippeAudio {
 
   Future<void> init() async {
     try {
-      await _musicPlayer.setAsset(AlippeAssets.audioBgMusic);
-      await _musicPlayer.setLoopMode(LoopMode.all);
-      await _musicPlayer.setVolume(_musicVolume);
-      _isMusicInitialized = true;
+      if (!_isMusicInitialized) {
+        await _musicPlayer.setAsset(AlippeAssets.audioBgMusic);
+        await _musicPlayer.setLoopMode(LoopMode.all);
+        await _musicPlayer.setVolume(_musicVolume);
+        _isMusicInitialized = true;
+      }
     } catch (e) {
       debugPrint('Alippe audio music init error: $e');
+    }
+
+    try {
+      if (!_areTapPlayersLoaded) {
+        for (final p in _tapPlayers) {
+          await p.setAsset(AlippeAssets.audioTap);
+        }
+        _areTapPlayersLoaded = true;
+      }
+    } catch (e) {
+      debugPrint('Alippe tap preloading error: $e');
     }
   }
 
@@ -60,6 +77,9 @@ class AlippeAudio {
     try {
       await _musicPlayer.stop();
       for (final p in _sfxPlayers) {
+        await p.stop();
+      }
+      for (final p in _tapPlayers) {
         await p.stop();
       }
     } catch (e) {
@@ -103,6 +123,11 @@ class AlippeAudio {
           p.stop();
         } catch (_) {}
       }
+      for (final p in _tapPlayers) {
+        try {
+          p.stop();
+        } catch (_) {}
+      }
     } else if (_soundVolume <= 0.05) {
       _soundVolume = 0.7;
     }
@@ -132,8 +157,18 @@ class AlippeAudio {
           p.stop();
         } catch (_) {}
       }
+      for (final p in _tapPlayers) {
+        try {
+          p.stop();
+        } catch (_) {}
+      }
     } else {
       for (final p in _sfxPlayers) {
+        try {
+          p.setVolume(_soundVolume);
+        } catch (_) {}
+      }
+      for (final p in _tapPlayers) {
         try {
           p.setVolume(_soundVolume);
         } catch (_) {}
@@ -158,7 +193,22 @@ class AlippeAudio {
     }
   }
 
-  void playTap() => playSfx(AlippeAssets.audioTap);
+  Future<void> playTap() async {
+    if (!isSoundEnabled || _soundVolume <= 0) return;
+    try {
+      final player = _tapPlayers[_currentTapIndex];
+      _currentTapIndex = (_currentTapIndex + 1) % _tapPlayers.length;
+      if (!_areTapPlayersLoaded) {
+        await player.setAsset(AlippeAssets.audioTap);
+      }
+      await player.setVolume(_soundVolume);
+      await player.seek(Duration.zero);
+      player.play();
+    } catch (e) {
+      playSfx(AlippeAssets.audioTap);
+    }
+  }
+
   void playBell() => playSfx(AlippeAssets.audioBell);
   void playFail() => playSfx(AlippeAssets.audioFail);
   void playGood() => playSfx(AlippeAssets.audioGood);
@@ -174,6 +224,9 @@ class AlippeAudio {
   void dispose() {
     _musicPlayer.dispose();
     for (final p in _sfxPlayers) {
+      p.dispose();
+    }
+    for (final p in _tapPlayers) {
       p.dispose();
     }
   }

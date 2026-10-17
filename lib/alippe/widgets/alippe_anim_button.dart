@@ -56,11 +56,12 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
     super.dispose();
   }
 
-  void _handleTapDown(TapDownDetails details) {
-    _controller.forward();
-  }
+  bool _hasTriggeredTap = false;
 
-  void _handleTapUp(TapUpDetails details) {
+  void _playSoundAndAction() {
+    if (_hasTriggeredTap) return;
+    _hasTriggeredTap = true;
+
     if (widget.soundAsset != null && widget.soundAsset!.isNotEmpty) {
       AlippeAudio().playSfx(widget.soundAsset!).catchError((_) {
         AlippeAudio().playTap();
@@ -74,12 +75,14 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
         AlippeTts().speak(widget.spokenText!);
       }
     }
+
     final remainingMs = ((1.0 - _controller.value) * 160).round();
-    Future.delayed(Duration(milliseconds: remainingMs + 100), () {
+    Future.delayed(Duration(milliseconds: remainingMs + 80), () {
       if (mounted) {
         _controller.reverse();
       }
     });
+
     if (widget.onPress != null) {
       Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
@@ -87,6 +90,19 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
         }
       });
     }
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    _hasTriggeredTap = false;
+    _controller.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _playSoundAndAction();
+  }
+
+  void _handleTap() {
+    _playSoundAndAction();
   }
 
   void _handleTapCancel() {
@@ -98,6 +114,7 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
     return GestureDetector(
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
+      onTap: _handleTap,
       onTapCancel: _handleTapCancel,
       behavior: HitTestBehavior.opaque,
       child: ScaleTransition(

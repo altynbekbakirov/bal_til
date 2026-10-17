@@ -29,6 +29,7 @@ class AlippeHomeScreen extends StatelessWidget {
   }
 
   void _onBookTap(BuildContext context, AlippeBookModel book) {
+    AlippeAudio().playTap();
     if (book.section2Id != null) {
       Navigator.of(context).pushNamed('/book', arguments: book.bookId);
     } else {
@@ -54,6 +55,7 @@ class AlippeHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AlippeAudio().init();
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -118,21 +120,25 @@ class AlippeHomeScreen extends StatelessWidget {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: AlippeAnimButton(
-                imageAsset: book.icon,
-                onPress: () => _onBookTap(context, book),
+        child: AlippeAnimButton(
+          scaleFactor: 1.15,
+          onPress: () => _onBookTap(context, book),
+          child: Column(
+            children: [
+              Expanded(
+                child: Image.asset(
+                  book.icon,
+                  fit: BoxFit.contain,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Image.asset(
-              _getStarAsset(score),
-              height: 28,
-              fit: BoxFit.contain,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Image.asset(
+                _getStarAsset(score),
+                height: 28,
+                fit: BoxFit.contain,
+              ),
+            ],
+          ),
         ),
       ),
     );
