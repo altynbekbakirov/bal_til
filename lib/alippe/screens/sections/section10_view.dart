@@ -141,16 +141,18 @@ class _Section10ViewState extends State<Section10View> {
 
     return AlippeContainer(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Sidebar with Restart and Back buttons
           Container(
-            width: 140,
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            width: 100,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
             child: Column(
               children: [
                 AlippeAnimButton(
-                  width: 90,
-                  height: 90,
+                  width: 75,
+                  height: 75,
+                  scaleFactor: 1.15,
                   imageAsset: AlippeAssets.sideRestart,
                   onPress: () {
                     AlippeAudio().playReset();
@@ -159,8 +161,9 @@ class _Section10ViewState extends State<Section10View> {
                 ),
                 const Spacer(),
                 AlippeAnimButton(
-                  width: 90,
-                  height: 90,
+                  width: 75,
+                  height: 75,
+                  scaleFactor: 1.15,
                   imageAsset: AlippeAssets.sideBack,
                   onPress: () => Navigator.of(context).pop(),
                 ),
@@ -168,69 +171,107 @@ class _Section10ViewState extends State<Section10View> {
             ),
           ),
 
-          // Main Card Grid
+          // Main Card Rows (2 rows, strictly bounded by screen height)
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: Center(
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                    childAspectRatio: 0.85,
+              padding: const EdgeInsets.fromLTRB(10, 16, 24, 16),
+              child: Column(
+                children: [
+                  // Row 1
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (int i = 0; i < columns; i++)
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: _buildCard(i),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                  itemCount: _cards.length,
-                  itemBuilder: (context, index) {
-                    final card = _cards[index];
-
-                    if (card.isMatched) {
-                      return const SizedBox.shrink(); // Vanish on match
-                    }
-
-                    return GestureDetector(
-                      onTap: () => _onCardTap(index),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) {
-                          return RotationTransition(
-                            turns: animation,
-                            child: child,
-                          );
-                        },
-                        child: card.isFaceUp
-                            ? Stack(
-                                key: const ValueKey(true),
-                                alignment: Alignment.center,
-                                children: [
-                                  Image.asset(
-                                    AlippeData.cardFront,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Image.asset(
-                                      card.image,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Image.asset(
-                                key: const ValueKey(false),
-                                AlippeData.cardBack,
-                                fit: BoxFit.contain,
-                              ),
-                      ),
-                    );
-                  },
-                ),
+                  const SizedBox(height: 10),
+                  // Row 2
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (int i = columns; i < columns * 2; i++)
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              child: _buildCard(i),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCard(int index) {
+    if (index >= _cards.length) return const SizedBox.shrink();
+    final card = _cards[index];
+
+    if (card.isMatched) {
+      return const SizedBox.shrink(); // Vanish on match
+    }
+
+    return GestureDetector(
+      onTap: () => _onCardTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) {
+          return ScaleTransition(
+            scale: animation,
+            child: child,
+          );
+        },
+        child: card.isFaceUp
+            ? Center(
+                key: ValueKey('front_${card.pairId}_$index'),
+                child: AspectRatio(
+                  aspectRatio: 255 / 347,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        AlippeData.cardFront,
+                        fit: BoxFit.contain,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(18.0),
+                        child: Image.asset(
+                          card.image,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : Center(
+                key: ValueKey('back_$index'),
+                child: AspectRatio(
+                  aspectRatio: 255 / 347,
+                  child: Image.asset(
+                    AlippeData.cardBack,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
       ),
     );
   }

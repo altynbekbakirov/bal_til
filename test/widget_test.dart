@@ -11,6 +11,7 @@ import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
 import 'package:bal_til/alippe/screens/sections/section_books_view.dart';
 import 'package:bal_til/alippe/core/alippe_cubit.dart';
 import 'package:bal_til/alippe/screens/dialogs/alippe_game_finish_dialog.dart';
+import 'package:bal_til/alippe/screens/sections/section10_view.dart';
 import 'package:bal_til/configs/routes.dart';
 
 void main() {
@@ -314,6 +315,34 @@ void main() {
     await tester.tap(animButtons.at(2));
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('Section10View renders card grid without overflow and flips on tap', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => AlippeCubit()),
+        ],
+        child: const MaterialApp(
+          home: Section10View(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final gestureDetectors = find.byType(GestureDetector);
+    expect(gestureDetectors, findsWidgets);
+
+    await tester.tap(gestureDetectors.first);
+    await tester.pump(const Duration(milliseconds: 350));
   });
 }
 
