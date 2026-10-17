@@ -16,6 +16,7 @@ class AlippeAudio {
 
   bool isMusicEnabled = true;
   bool isSoundEnabled = true;
+  bool isAlippeActive = false;
 
   double get musicVolume => _musicVolume;
   double get soundVolume => _soundVolume;
@@ -32,7 +33,7 @@ class AlippeAudio {
   }
 
   Future<void> startMusic() async {
-    if (!isMusicEnabled || _musicVolume <= 0) return;
+    if (!isMusicEnabled || !isAlippeActive || _musicVolume <= 0) return;
     try {
       if (!_isMusicInitialized) {
         await init();
@@ -72,7 +73,7 @@ class AlippeAudio {
   }
 
   Future<void> resumeMusic() async {
-    if (!isMusicEnabled || _musicVolume <= 0) return;
+    if (!isMusicEnabled || !isAlippeActive || _musicVolume <= 0) return;
     try {
       await _musicPlayer.setVolume(_musicVolume);
       await _musicPlayer.play();
@@ -85,7 +86,7 @@ class AlippeAudio {
     isMusicEnabled = enabled;
     if (!enabled) {
       await stopMusic();
-    } else {
+    } else if (isAlippeActive) {
       if (_musicVolume <= 0.05) _musicVolume = 0.7;
       resumeMusic();
     }

@@ -7,6 +7,7 @@ import '../../../alippe/screens/alippe_splash_screen.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/theme/app_theme.dart';
+import 'settings_dialog.dart';
 
 class GameSelectionModal extends StatelessWidget {
   const GameSelectionModal({super.key});
@@ -21,7 +22,10 @@ class GameSelectionModal extends StatelessWidget {
   }
 
   static Future<void> launchAlippe(BuildContext context) async {
-    // 1. Completely silence Bal Til audio before switching
+    // 1. Mark active game and silence Bal Til audio before switching
+    AudioController.instance.isBalTilActive = false;
+    AlippeAudio().isAlippeActive = true;
+    await Future.delayed(const Duration(milliseconds: 120));
     await AudioController.instance.stopAll();
     await AlippeAudio().stopAll();
 
@@ -38,6 +42,8 @@ class GameSelectionModal extends StatelessWidget {
 
     // 2. Completely silence Alippe audio upon returning
     await AlippeAudio().stopAll();
+    AlippeAudio().isAlippeActive = false;
+    AudioController.instance.isBalTilActive = true;
 
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -48,7 +54,7 @@ class GameSelectionModal extends StatelessWidget {
     // 3. Synchronize settings and resume Bal Til menu music only if music is enabled
     if (context.mounted) {
       await context.read<AudioCubit>().loadPreferences();
-      if (AudioController.instance.isMusicEnabled) {
+      if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
         AudioController.instance.playMenuMusic();
       }
     }
@@ -133,12 +139,154 @@ class GameSelectionModal extends StatelessWidget {
                     ),
                   ),
                   IconButton(
+                    icon: const Icon(Icons.settings_rounded, color: Color(0xFF64748B), size: 24),
+                    tooltip: 'Орнотуулар',
+                    onPressed: () {
+                      AudioController.instance.playButtonClick();
+                      showDialog(
+                        context: context,
+                        builder: (_) => const SettingsDialog(),
+                      );
+                    },
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 26),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      AudioController.instance.playButtonClick();
+                      Navigator.pop(context);
+                    },
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
+
+              // Quick Audio & Effect Settings Bar
+              BlocBuilder<AudioCubit, AudioState>(
+                builder: (context, audioState) {
+                  final cubit = context.read<AudioCubit>();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune_rounded, size: 20, color: Color(0xFF64748B)),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Үн & Музыка:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                        const Spacer(),
+                        // Music toggle chip
+                        InkWell(
+                          onTap: () {
+                            cubit.toggleMusic();
+                            AudioController.instance.playButtonClick();
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: audioState.isMusicEnabled
+                                  ? const Color(0xFFFEF3C7)
+                                  : const Color(0xFFE2E8F0),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: audioState.isMusicEnabled
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  audioState.isMusicEnabled
+                                      ? Icons.music_note_rounded
+                                      : Icons.music_off_rounded,
+                                  size: 16,
+                                  color: audioState.isMusicEnabled
+                                      ? const Color(0xFFB45309)
+                                      : const Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Музыка',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: audioState.isMusicEnabled
+                                        ? const Color(0xFF92400E)
+                                        : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Sound effects toggle chip
+                        InkWell(
+                          onTap: () {
+                            cubit.toggleSound();
+                            AudioController.instance.playButtonClick();
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: audioState.isSoundEnabled
+                                  ? const Color(0xFFD1FAE5)
+                                  : const Color(0xFFE2E8F0),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: audioState.isSoundEnabled
+                                    ? const Color(0xFF10B981)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  audioState.isSoundEnabled
+                                      ? Icons.volume_up_rounded
+                                      : Icons.volume_off_rounded,
+                                  size: 16,
+                                  color: audioState.isSoundEnabled
+                                      ? const Color(0xFF047857)
+                                      : const Color(0xFF64748B),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Эффект',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: audioState.isSoundEnabled
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
 
               // Card 1: Alippe (3-6 years)
               _buildGameCard(

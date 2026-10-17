@@ -26,6 +26,8 @@ class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
 
   Future<void> _cancelAndExit() async {
     _cancelled = true;
+    AlippeAudio().isAlippeActive = false;
+    AudioController.instance.isBalTilActive = true;
     await AlippeAudio().stopAll();
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -34,13 +36,15 @@ class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
-      if (AudioController.instance.isMusicEnabled) {
+      if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
         AudioController.instance.playMenuMusic();
       }
     }
   }
 
   Future<void> _initAndNavigate() async {
+    AlippeAudio().isAlippeActive = true;
+    AudioController.instance.isBalTilActive = false;
     await AudioController.instance.stopAll();
 
     if (!mounted || _cancelled) return;

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../alippe/core/alippe_audio.dart';
 import '../../../configs/routes.dart';
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/audio/audio_cubit.dart';
 import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../widgets/game_selection_modal.dart';
@@ -22,12 +24,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    AudioController.instance.isBalTilActive = true;
+    AlippeAudio().isAlippeActive = false;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<AudioCubit>().loadPreferences();
+      if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
+        AudioController.instance.playMenuMusic();
+      }
+      _checkFirstLaunch();
+    });
   }
 
   Future<void> _checkFirstLaunch() async {

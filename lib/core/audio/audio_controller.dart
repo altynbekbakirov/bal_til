@@ -15,6 +15,7 @@ class AudioController {
 
   bool isMusicEnabled = true;
   bool isSoundEnabled = true;
+  bool isBalTilActive = true;
 
   Future<void> init() async {
     try {
@@ -25,7 +26,7 @@ class AudioController {
   }
 
   Future<void> playMenuMusic() async {
-    if (!isMusicEnabled) return;
+    if (!isMusicEnabled || !isBalTilActive) return;
     try {
       await _bgmPlayer.setLoopMode(LoopMode.one);
       await _bgmPlayer.setAsset(AssetPaths.menuMusic);
@@ -34,7 +35,7 @@ class AudioController {
   }
 
   Future<void> playGameplayMusic() async {
-    if (!isMusicEnabled) return;
+    if (!isMusicEnabled || !isBalTilActive) return;
     try {
       await _bgmPlayer.setLoopMode(LoopMode.one);
       await _bgmPlayer.setAsset(AssetPaths.gameplayMusic);
@@ -121,7 +122,7 @@ class AudioController {
     isMusicEnabled = enabled;
     if (!enabled) {
       stopMenuMusic();
-    } else {
+    } else if (isBalTilActive) {
       playMenuMusic();
     }
   }

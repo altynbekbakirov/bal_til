@@ -344,5 +344,24 @@ void main() {
       expect(AudioController.instance.isSoundEnabled, true);
       expect(prefs.getBool('sound_enabled'), true);
     });
+
+    test('Audio separation respects active game status', () async {
+      AudioController.instance.isBalTilActive = true;
+      AlippeAudio().isAlippeActive = false;
+
+      // In Bal Til, Alippe startMusic should not play
+      await AlippeAudio().startMusic();
+      expect(AlippeAudio().isAlippeActive, false);
+
+      // In Alippe, Bal Til playMenuMusic should not play
+      AudioController.instance.isBalTilActive = false;
+      AlippeAudio().isAlippeActive = true;
+      await AudioController.instance.playMenuMusic();
+      expect(AudioController.instance.isBalTilActive, false);
+
+      // Restore
+      AudioController.instance.isBalTilActive = true;
+      AlippeAudio().isAlippeActive = false;
+    });
   });
 }
