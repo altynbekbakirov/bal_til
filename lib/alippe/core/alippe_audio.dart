@@ -8,7 +8,8 @@ class AlippeAudio {
   AlippeAudio._internal();
 
   final AudioPlayer _musicPlayer = AudioPlayer();
-  final AudioPlayer _sfxPlayer = AudioPlayer();
+  final List<AudioPlayer> _sfxPlayers = List.generate(4, (_) => AudioPlayer());
+  int _currentSfxIndex = 0;
 
   double _musicVolume = 0.7;
   double _soundVolume = 0.7;
@@ -58,7 +59,9 @@ class AlippeAudio {
   Future<void> stopAll() async {
     try {
       await _musicPlayer.stop();
-      await _sfxPlayer.stop();
+      for (final p in _sfxPlayers) {
+        await p.stop();
+      }
     } catch (e) {
       debugPrint('Error stopping all audio in Alippe: $e');
     }
@@ -95,9 +98,11 @@ class AlippeAudio {
   void setSoundEnabled(bool enabled) {
     isSoundEnabled = enabled;
     if (!enabled) {
-      try {
-        _sfxPlayer.stop();
-      } catch (_) {}
+      for (final p in _sfxPlayers) {
+        try {
+          p.stop();
+        } catch (_) {}
+      }
     } else if (_soundVolume <= 0.05) {
       _soundVolume = 0.7;
     }
@@ -122,20 +127,34 @@ class AlippeAudio {
     _soundVolume = volume.clamp(0.0, 1.0);
     isSoundEnabled = _soundVolume > 0.05;
     if (!isSoundEnabled) {
-      _sfxPlayer.stop();
+      for (final p in _sfxPlayers) {
+        try {
+          p.stop();
+        } catch (_) {}
+      }
+    } else {
+      for (final p in _sfxPlayers) {
+        try {
+          p.setVolume(_soundVolume);
+        } catch (_) {}
+      }
     }
   }
 
   Future<void> playSfx(String assetPath) async {
     if (!isSoundEnabled || _soundVolume <= 0) return;
     try {
-      await _sfxPlayer.setAsset(assetPath);
-      await _sfxPlayer.seek(Duration.zero);
-      await _sfxPlayer.setVolume(_soundVolume);
-      _sfxPlayer.play();
+      final player = _sfxPlayers[_currentSfxIndex];
+      _currentSfxIndex = (_currentSfxIndex + 1) % _sfxPlayers.length;
+      await player.setAsset(assetPath);
+      await player.seek(Duration.zero);
+      await player.setVolume(_soundVolume);
+      player.play();
     } catch (e) {
-      debugPrint('Error playing SFX ($assetPath): $e');
-      rethrow;
+      // Loading interruptions can happen during rapid successive clicks; ignore safely
+      if (!e.toString().contains('interrupted')) {
+        debugPrint('Notice playing SFX ($assetPath): $e');
+      }
     }
   }
 
@@ -154,6 +173,8 @@ class AlippeAudio {
 
   void dispose() {
     _musicPlayer.dispose();
-    _sfxPlayer.dispose();
+    for (final p in _sfxPlayers) {
+      p.dispose();
+    }
   }
 }
