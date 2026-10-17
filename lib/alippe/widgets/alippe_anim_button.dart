@@ -10,6 +10,7 @@ class AlippeAnimButton extends StatefulWidget {
   final double? width;
   final double? height;
   final String? spokenText;
+  final String? soundAsset;
 
   const AlippeAnimButton({
     super.key,
@@ -20,6 +21,7 @@ class AlippeAnimButton extends StatefulWidget {
     this.width,
     this.height,
     this.spokenText,
+    this.soundAsset,
   });
 
   @override
@@ -59,9 +61,13 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
   }
 
   void _handleTapUp(TapUpDetails details) {
-    AlippeAudio().playTap();
-    if (widget.spokenText != null && widget.spokenText!.isNotEmpty) {
-      AlippeTts().speak(widget.spokenText!);
+    if (widget.soundAsset != null && widget.soundAsset!.isNotEmpty) {
+      AlippeAudio().playSfx(widget.soundAsset!);
+    } else {
+      AlippeAudio().playTap();
+      if (widget.spokenText != null && widget.spokenText!.isNotEmpty) {
+        AlippeTts().speak(widget.spokenText!);
+      }
     }
     Future.delayed(const Duration(milliseconds: 120), () {
       if (mounted) {

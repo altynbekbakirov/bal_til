@@ -116,6 +116,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic3'),
                         imageAsset: item.pic3,
+                        soundAsset: item.sound1,
                         spokenText: item.word1,
                         scaleFactor: 1.45,
                       ),
@@ -125,6 +126,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic4'),
                         imageAsset: item.pic4,
+                        soundAsset: item.sound2,
                         spokenText: item.word2,
                         scaleFactor: 1.45,
                       ),

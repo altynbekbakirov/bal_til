@@ -44,6 +44,7 @@ flutter:
     - assets/images/map/landmarks/
     - assets/images/ui/
     - assets/alippe/audio/
+    - assets/alippe/audio/items/
     - assets/alippe/audio/trash/
     - assets/alippe/images/
     - assets/alippe/images/bg/
