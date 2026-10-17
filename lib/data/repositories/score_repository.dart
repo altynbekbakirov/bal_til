@@ -1,4 +1,4 @@
-﻿import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/score_models.dart';
 
 class ScoreRepository {
@@ -11,6 +11,7 @@ class ScoreRepository {
   static const String _kWcCompletedCount = 'wc_completed_count';
 
   static const String _kWsCategory = 'ws_category_index';
+  static const String _kWsLevel = 'ws_level_index';
   static const String _kWsScore = 'ws_total_score';
   static const String _kWsCompletedCount = 'ws_completed_count';
   static const String _kWsWordsFound = 'ws_words_found';
@@ -85,10 +86,17 @@ class ScoreRepository {
     final prefs = await SharedPreferences.getInstance();
     return WordSearchProgress(
       categoryIndex: prefs.getInt(_kWsCategory) ?? 0,
+      levelIndex: prefs.getInt(_kWsLevel) ?? 0,
       categoriesCompleted: prefs.getInt(_kWsCompletedCount) ?? 0,
       totalScore: prefs.getInt(_kWsScore) ?? 0,
       totalWordsFound: prefs.getInt(_kWsWordsFound) ?? 0,
     );
+  }
+
+  Future<void> saveWordSearchCurrentPosition(int categoryIndex, int levelIndex) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kWsCategory, categoryIndex);
+    await prefs.setInt(_kWsLevel, levelIndex);
   }
 
   Future<void> saveWordSearchCurrentCategory(int categoryIndex) async {
@@ -96,11 +104,13 @@ class ScoreRepository {
     await prefs.setInt(_kWsCategory, categoryIndex);
   }
 
-  Future<WordSearchProgress> recordWordSearchCategoryCompleted({
+  Future<WordSearchProgress> recordWordSearchLevelCompleted({
     required int categoryIndex,
+    required int levelIndex,
     required int wordsFoundCount,
     required int scoreEarned,
-    required int totalCategories,
+    required int maxLevelsInCategory,
+    required int maxCategories,
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -111,18 +121,42 @@ class ScoreRepository {
     final newScore = prevScore + scoreEarned;
     final newCompleted = prevCompleted + 1;
     final newWords = prevWords + wordsFoundCount;
-    final nextCategory = totalCategories > 0 ? (categoryIndex + 1) % totalCategories : 0;
+
+    int nextLevel = levelIndex + 1;
+    int nextCategory = categoryIndex;
+    if (nextLevel >= maxLevelsInCategory) {
+      nextCategory = maxCategories > 0 ? (categoryIndex + 1) % maxCategories : 0;
+      nextLevel = 0;
+    }
 
     await prefs.setInt(_kWsScore, newScore);
     await prefs.setInt(_kWsCompletedCount, newCompleted);
     await prefs.setInt(_kWsWordsFound, newWords);
     await prefs.setInt(_kWsCategory, nextCategory);
+    await prefs.setInt(_kWsLevel, nextLevel);
 
     return WordSearchProgress(
       categoryIndex: nextCategory,
+      levelIndex: nextLevel,
       categoriesCompleted: newCompleted,
       totalScore: newScore,
       totalWordsFound: newWords,
+    );
+  }
+
+  Future<WordSearchProgress> recordWordSearchCategoryCompleted({
+    required int categoryIndex,
+    required int wordsFoundCount,
+    required int scoreEarned,
+    required int totalCategories,
+  }) async {
+    return recordWordSearchLevelCompleted(
+      categoryIndex: categoryIndex,
+      levelIndex: 0,
+      wordsFoundCount: wordsFoundCount,
+      scoreEarned: scoreEarned,
+      maxLevelsInCategory: 1,
+      maxCategories: totalCategories,
     );
   }
 
@@ -148,6 +182,7 @@ class ScoreRepository {
     await prefs.remove(_kWcCompletedCount);
 
     await prefs.remove(_kWsCategory);
+    await prefs.remove(_kWsLevel);
     await prefs.remove(_kWsScore);
     await prefs.remove(_kWsCompletedCount);
     await prefs.remove(_kWsWordsFound);

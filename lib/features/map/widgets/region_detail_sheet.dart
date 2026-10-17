@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../data/models/models.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/audio/audio_controller.dart';
@@ -74,6 +74,23 @@ class RegionDetailSheet extends StatelessWidget {
               ),
             ],
           ),
+          if (region.landmarkImage != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 120),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.softBackground,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Image.asset(
+                  region.landmarkImage!,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(18),

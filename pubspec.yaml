@@ -1,4 +1,4 @@
-﻿name: bal_til
+name: bal_til
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -40,4 +40,5 @@ flutter:
     - assets/images/animals/
     - assets/images/plants/
     - assets/images/map/
+    - assets/images/map/landmarks/
     - assets/images/ui/

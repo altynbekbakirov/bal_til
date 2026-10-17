@@ -1,4 +1,4 @@
-﻿class WordConnectProgress {
+class WordConnectProgress {
   final int packIndex;
   final int levelIndex;
   final int unlockedPackIndex;
@@ -40,12 +40,14 @@
 
 class WordSearchProgress {
   final int categoryIndex;
+  final int levelIndex;
   final int categoriesCompleted;
   final int totalScore;
   final int totalWordsFound;
 
   const WordSearchProgress({
     this.categoryIndex = 0,
+    this.levelIndex = 0,
     this.categoriesCompleted = 0,
     this.totalScore = 0,
     this.totalWordsFound = 0,
@@ -53,12 +55,14 @@ class WordSearchProgress {
 
   WordSearchProgress copyWith({
     int? categoryIndex,
+    int? levelIndex,
     int? categoriesCompleted,
     int? totalScore,
     int? totalWordsFound,
   }) {
     return WordSearchProgress(
       categoryIndex: categoryIndex ?? this.categoryIndex,
+      levelIndex: levelIndex ?? this.levelIndex,
       categoriesCompleted: categoriesCompleted ?? this.categoriesCompleted,
       totalScore: totalScore ?? this.totalScore,
       totalWordsFound: totalWordsFound ?? this.totalWordsFound,

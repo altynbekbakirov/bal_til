@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
 import '../../../core/audio/audio_controller.dart';
@@ -67,69 +67,71 @@ class _MapScreenState extends State<MapScreen> {
                 child: InteractiveViewer(
                   maxScale: 3.0,
                   child: AspectRatio(
-                    aspectRatio: 1.5,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.asset(
-                              AssetPaths.mapImage,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) => Container(
-                                color: Colors.blue.shade50,
-                                child: const Center(child: Icon(Icons.map, size: 80, color: Colors.blue)),
+                    aspectRatio: 1115 / 668,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.asset(
+                                  AssetPaths.mapImage,
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (_, _, _) => Container(
+                                    color: Colors.blue.shade50,
+                                    child: const Center(child: Icon(Icons.map, size: 80, color: Colors.blue)),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        // Region interactive pins
-                        ..._regions.map((region) {
-                          return LayoutBuilder(
-                            builder: (context, constraints) {
-                              final left = region.x * constraints.maxWidth - 20;
-                              final top = region.y * constraints.maxHeight - 20;
+                            // Region interactive pins
+                            ..._regions.map((region) {
                               return Positioned(
-                                left: left,
-                                top: top,
-                                child: GestureDetector(
-                                  onTap: () => _onRegionSelected(region),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.coralRed,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppTheme.coralRed.withValues(alpha: 0.4),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                      border: Border.all(color: Colors.white, width: 2),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.place_rounded, color: Colors.white, size: 14),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          region.name,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
+                                left: region.x * constraints.maxWidth,
+                                top: region.y * constraints.maxHeight,
+                                child: FractionalTranslation(
+                                  translation: const Offset(-0.5, -0.5),
+                                  child: GestureDetector(
+                                    onTap: () => _onRegionSelected(region),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.coralRed,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.coralRed.withValues(alpha: 0.4),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                        border: Border.all(color: Colors.white, width: 2),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.place_rounded, color: Colors.white, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            region.name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               );
-                            },
-                          );
-                        }),
-                      ],
+                            }),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),

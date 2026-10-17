@@ -20,8 +20,25 @@ class WordConnectScreen extends StatelessWidget {
   }
 }
 
-class _WordConnectView extends StatelessWidget {
+class _WordConnectView extends StatefulWidget {
   const _WordConnectView();
+
+  @override
+  State<_WordConnectView> createState() => _WordConnectViewState();
+}
+
+class _WordConnectViewState extends State<_WordConnectView> {
+  @override
+  void initState() {
+    super.initState();
+    AudioController.instance.playGameplayMusic();
+  }
+
+  @override
+  void dispose() {
+    AudioController.instance.playMenuMusic();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,10 +123,19 @@ class _WordConnectView extends StatelessWidget {
         ],
       ),
       body: BlocConsumer<WordConnectCubit, WordConnectState>(
+        listenWhen: (previous, current) {
+          return current is WordConnectPlaying &&
+              current.isCompleted &&
+              (previous is! WordConnectPlaying || !previous.isCompleted);
+        },
         listener: (context, state) {
           if (state is WordConnectPlaying && state.isCompleted) {
             context.read<ScoreCubit>().loadScores();
-            _showVictoryDialog(context, state);
+            if (state.currentOverallLevel >= state.totalLevels) {
+              _showGameCompletedDialog(context, state);
+            } else {
+              _showVictoryDialog(context, state);
+            }
           }
         },
         builder: (context, state) {
@@ -383,80 +409,262 @@ class _WordConnectView extends StatelessWidget {
   }
 
   void _showVictoryDialog(BuildContext context, WordConnectPlaying state) {
+    bool isDismissing = false;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (i) {
-                    final isEarned = i < state.starsEarned;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        isEarned ? Icons.star_rounded : Icons.star_outline_rounded,
-                        size: 46,
-                        color: isEarned ? AppTheme.sunnyYellow : const Color(0xFFCBD5E1),
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(3, (i) {
+                        final isEarned = i < state.starsEarned;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            isEarned ? Icons.star_rounded : Icons.star_outline_rounded,
+                            size: 46,
+                            color: isEarned ? AppTheme.sunnyYellow : const Color(0xFFCBD5E1),
+                          ),
+                        );
+                      }),
+                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Азаматсың!',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
                       ),
-                    );
-                  }),
-                ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 12),
-                const Text(
-                  'Азаматсың!',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '+${state.levelScore} упай топтолду!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryDarkAmber,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${state.currentOverallLevel}/${state.totalLevels}-деңгээл ийгиликтүү бүттү!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: isDismissing
+                          ? null
+                          : () {
+                              setDialogState(() => isDismissing = true);
+                              AudioController.instance.playButtonClick();
+                              Navigator.pop(dialogCtx);
+                              context.read<WordConnectCubit>().nextLevel();
+                              context.read<ScoreCubit>().loadScores();
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryAmber,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text(
+                        'Кийинки деңгээл',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '+${state.levelScore} упай топтолду!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryDarkAmber,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${state.currentOverallLevel}/${state.totalLevels}-деңгээл ийгиликтүү бүттү!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () {
-                    AudioController.instance.playButtonClick();
-                    Navigator.pop(dialogCtx);
-                    context.read<WordConnectCubit>().nextLevel();
-                    context.read<ScoreCubit>().loadScores();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryAmber,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                  child: const Text(
-                    'Кийинки деңгээл',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  void _showGameCompletedDialog(BuildContext context, WordConnectPlaying state) {
+    bool isDismissing = false;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryAmber.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events_rounded,
+                        size: 68,
+                        color: AppTheme.primaryAmber,
+                      ),
+                    ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Азаматсыз! 🎉',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      '«Сөздү тап» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem(
+                            icon: Icons.star_rounded,
+                            iconColor: AppTheme.sunnyYellow,
+                            value: '${state.totalStars}',
+                            label: 'Жылдыздар',
+                          ),
+                          Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
+                          _buildStatItem(
+                            icon: Icons.military_tech_rounded,
+                            iconColor: AppTheme.skyTurquoise,
+                            value: '${state.totalScore}',
+                            label: 'Жалпы упай',
+                          ),
+                          Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
+                          _buildStatItem(
+                            icon: Icons.task_alt_rounded,
+                            iconColor: AppTheme.emeraldGreen,
+                            value: '${state.totalLevels}/${state.totalLevels}',
+                            label: 'Деңгээлдер',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isDismissing
+                            ? null
+                            : () {
+                                setDialogState(() => isDismissing = true);
+                                AudioController.instance.playButtonClick();
+                                Navigator.pop(dialogCtx);
+                                Navigator.pop(context);
+                              },
+                        icon: const Icon(Icons.home_rounded, size: 20),
+                        label: const Text(
+                          'Башкы бетке чыгуу',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryAmber,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isDismissing
+                            ? null
+                            : () {
+                                setDialogState(() => isDismissing = true);
+                                AudioController.instance.playButtonClick();
+                                Navigator.pop(dialogCtx);
+                                context.read<WordConnectCubit>().restartGame();
+                                context.read<ScoreCubit>().loadScores();
+                              },
+                        icon: const Icon(Icons.replay_rounded, size: 20),
+                        label: const Text(
+                          'Кайра ойноо (1-деңгээлден)',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryDarkAmber,
+                          side: BorderSide(color: AppTheme.primaryAmber.withValues(alpha: 0.5), width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required Color iconColor,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: iconColor, size: 22),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

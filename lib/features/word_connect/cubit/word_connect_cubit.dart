@@ -212,7 +212,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     _feedbackTimer = Timer(duration, () {
       if (state is WordConnectPlaying) {
         final s = state as WordConnectPlaying;
-        if (s.feedback.text.isNotEmpty) {
+        if (!s.isCompleted && s.feedback.text.isNotEmpty) {
           emit(s.copyWith(feedback: const WordFeedback()));
         }
       }
@@ -233,11 +233,10 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     if (state is WordConnectPlaying) {
       final s = state as WordConnectPlaying;
       final hintPrefix = s.effectiveHintPrefix;
-      if (hintPrefix.isNotEmpty &&
-          s.currentAttempt.length > hintPrefix.length &&
-          s.currentAttempt.startsWith(hintPrefix)) {
+      if (hintPrefix.isNotEmpty) {
         emit(s.copyWith(
           currentAttempt: hintPrefix,
+          activeHintPrefix: hintPrefix,
           feedback: const WordFeedback(),
         ));
       } else {
@@ -253,9 +252,18 @@ class WordConnectCubit extends Cubit<WordConnectState> {
   Future<void> submitAttempt() async {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
-    final candidate = s.currentAttempt.toLowerCase().trim().replaceAll(' ', '');
+    if (s.isCompleted) return;
+    String candidate = s.currentAttempt.toLowerCase().trim().replaceAll(' ', '');
 
     if (candidate.isEmpty) return;
+
+    final hintPrefix = s.effectiveHintPrefix.toLowerCase();
+    if (!s.level.words.contains(candidate) &&
+        hintPrefix.isNotEmpty &&
+        !candidate.startsWith(hintPrefix) &&
+        s.level.words.contains(hintPrefix + candidate)) {
+      candidate = hintPrefix + candidate;
+    }
 
     // Check if already found
     if (s.solvedWords.contains(candidate)) {
@@ -283,6 +291,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       int newTotalStars = s.totalStars;
 
       if (isAllSolved) {
+        _feedbackTimer?.cancel();
         AudioController.instance.playLevelComplete();
         starsEarned = s.hintsUsed == 0 ? 3 : (s.hintsUsed == 1 ? 2 : 1);
         levelScore = (s.level.words.length * 10) + (starsEarned * 10);
@@ -321,7 +330,9 @@ class WordConnectCubit extends Cubit<WordConnectState> {
         totalScore: newTotalScore,
         totalStars: newTotalStars,
       ));
-      _scheduleFeedbackDismiss();
+      if (!isAllSolved) {
+        _scheduleFeedbackDismiss();
+      }
     } else {
       AudioController.instance.playWrongWord();
       final restored = s.effectiveHintPrefix;
@@ -366,19 +377,25 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     String targetWord = '';
     int letterIdx = -1;
 
-    // If current attempt is a prefix of an unsolved word, continue with that word
+    // 1. If current attempt is a prefix of an unsolved word, continue with that word
     final currentPref = s.currentAttempt.toLowerCase().trim();
     if (currentPref.isNotEmpty) {
       for (final w in unsolvedWords) {
-        if (w.startsWith(currentPref) && w.length > currentPref.length) {
-          targetWord = w;
-          letterIdx = currentPref.length;
-          break;
+        if (w.startsWith(currentPref)) {
+          final alreadyHinted = s.hintedLetters[w] ?? {};
+          for (int i = 0; i < w.length; i++) {
+            if (!alreadyHinted.contains(i)) {
+              targetWord = w;
+              letterIdx = i;
+              break;
+            }
+          }
+          if (targetWord.isNotEmpty) break;
         }
       }
     }
 
-    // Otherwise, pick the first unsolved word with an unhinted letter
+    // 2. Otherwise, pick the first unsolved word with an unhinted letter
     if (targetWord.isEmpty) {
       for (final w in unsolvedWords) {
         final alreadyHinted = s.hintedLetters[w] ?? {};
@@ -403,9 +420,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
 
     final newHintedMap = Map<String, Set<int>>.from(s.hintedLetters);
     final wordHints = Set<int>.from(newHintedMap[word] ?? {});
-    for (int i = 0; i <= letterIdx; i++) {
-      wordHints.add(i);
-    }
+    wordHints.add(letterIdx);
     newHintedMap[word] = wordHints;
 
     final isWordFullyHinted = wordHints.length >= word.length;
@@ -422,6 +437,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     final newHintsUsed = s.hintsUsed + 1;
 
     if (isAllSolved) {
+      _feedbackTimer?.cancel();
       AudioController.instance.playLevelComplete();
       starsEarned = newHintsUsed == 0 ? 3 : (newHintsUsed == 1 ? 2 : 1);
       levelScore = (s.level.words.length * 10) + (starsEarned * 10);
@@ -441,7 +457,11 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       AudioController.instance.playWordSolved();
     }
 
-    final newAttempt = isWordFullyHinted ? '' : word.substring(0, letterIdx + 1);
+    int count = 0;
+    while (wordHints.contains(count) && count < word.length) {
+      count++;
+    }
+    final newAttempt = isWordFullyHinted ? '' : word.substring(0, count);
     final feedback = isWordFullyHinted
         ? WordFeedback(
             text: '«${word.toUpperCase()}» табылды! 🎉',
@@ -463,12 +483,13 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       totalStars: newTotalStars,
     ));
 
-    if (isWordFullyHinted) {
+    if (isWordFullyHinted && !isAllSolved) {
       _scheduleFeedbackDismiss();
     }
   }
 
   Future<void> nextLevel() async {
+    _feedbackTimer?.cancel();
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
     int nextLevelIdx = s.levelIndex + 1;
@@ -490,6 +511,20 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       packs: s.packs,
       packIndex: nextPackIdx,
       levelIndex: nextLevelIdx,
+      totalScore: s.totalScore,
+      totalStars: s.totalStars,
+    );
+  }
+
+  Future<void> restartGame() async {
+    _feedbackTimer?.cancel();
+    if (state is! WordConnectPlaying) return;
+    final s = state as WordConnectPlaying;
+    await _scoreRepository.saveWordConnectCurrentPosition(0, 0);
+    _startLevel(
+      packs: s.packs,
+      packIndex: 0,
+      levelIndex: 0,
       totalScore: s.totalScore,
       totalStars: s.totalStars,
     );

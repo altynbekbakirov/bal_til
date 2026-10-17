@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/theme/app_theme.dart';
@@ -17,7 +17,7 @@ class _AnthemScreenState extends State<AnthemScreen> {
   @override
   void initState() {
     super.initState();
-    _audio.playAnthem();
+    _audio.stopMenuMusic();
   }
 
   @override
@@ -78,28 +78,103 @@ class _AnthemScreenState extends State<AnthemScreen> {
               stream: _audio.anthemPlayerStateStream,
               builder: (context, snapshot) {
                 final state = snapshot.data;
-                final isPlaying = state?.playing ?? false;
-                return Center(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (isPlaying) {
-                        _audio.pauseAnthem();
-                      } else {
-                        _audio.playAnthem();
-                      }
-                    },
-                    icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 28),
-                    label: Text(
-                      isPlaying ? 'Токтотуу' : 'Угуу',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                final isPlaying = (state?.playing ?? false) &&
+                    state?.processingState != ProcessingState.completed;
+                return Column(
+                  children: [
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          _audio.playButtonClick();
+                          if (isPlaying) {
+                            _audio.pauseAnthem();
+                          } else {
+                            _audio.playAnthem();
+                          }
+                        },
+                        icon: Icon(
+                          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          size: 28,
+                        ),
+                        label: Text(
+                          isPlaying ? 'Токтотуу' : 'Угуу',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isPlaying ? const Color(0xFFE11D48) : AppTheme.coralRed,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          elevation: 3,
+                        ),
+                      ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.coralRed,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    const SizedBox(height: 12),
+                    StreamBuilder<Duration>(
+                      stream: _audio.anthemPositionStream,
+                      builder: (context, posSnapshot) {
+                        final position = posSnapshot.data ?? Duration.zero;
+                        final total = _audio.anthemDuration ?? const Duration(seconds: 123);
+                        final maxMs = total.inMilliseconds > 0 ? total.inMilliseconds.toDouble() : 123000.0;
+                        final curMs = position.inMilliseconds.clamp(0, maxMs.toInt()).toDouble();
+
+                        String formatDuration(Duration d) {
+                          final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+                          final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+                          return '$minutes:$seconds';
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Column(
+                            children: [
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: AppTheme.coralRed,
+                                  inactiveTrackColor: AppTheme.coralRed.withValues(alpha: 0.2),
+                                  thumbColor: AppTheme.coralRed,
+                                  trackHeight: 4,
+                                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                ),
+                                child: Slider(
+                                  value: curMs,
+                                  min: 0,
+                                  max: maxMs,
+                                  onChanged: (val) {
+                                    _audio.seekAnthem(Duration(milliseconds: val.round()));
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      formatDuration(position),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    Text(
+                                      formatDuration(total),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  ),
+                  ],
                 );
               },
             ),

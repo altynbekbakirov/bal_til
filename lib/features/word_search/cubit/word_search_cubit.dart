@@ -35,8 +35,11 @@ abstract class WordSearchState {}
 class WordSearchLoading extends WordSearchState {}
 
 class WordSearchPlaying extends WordSearchState {
+  static const int levelsPerCategory = 10;
+
   final WordSearchBoard board;
   final int categoryIndex;
+  final int levelIndex;
   final String categoryName;
   final int totalCategories;
   final bool isCompleted;
@@ -47,6 +50,7 @@ class WordSearchPlaying extends WordSearchState {
   WordSearchPlaying({
     required this.board,
     required this.categoryIndex,
+    this.levelIndex = 0,
     required this.categoryName,
     this.totalCategories = 3,
     this.isCompleted = false,
@@ -55,9 +59,14 @@ class WordSearchPlaying extends WordSearchState {
     this.categoriesCompleted = 0,
   });
 
+  int get levelsInCategory => levelsPerCategory;
+  int get totalLevels => totalCategories * levelsPerCategory;
+  int get currentOverallLevel => (categoryIndex * levelsPerCategory) + levelIndex + 1;
+
   WordSearchPlaying copyWith({
     WordSearchBoard? board,
     int? categoryIndex,
+    int? levelIndex,
     String? categoryName,
     int? totalCategories,
     bool? isCompleted,
@@ -68,6 +77,7 @@ class WordSearchPlaying extends WordSearchState {
     return WordSearchPlaying(
       board: board ?? this.board,
       categoryIndex: categoryIndex ?? this.categoryIndex,
+      levelIndex: levelIndex ?? this.levelIndex,
       categoryName: categoryName ?? this.categoryName,
       totalCategories: totalCategories ?? this.totalCategories,
       isCompleted: isCompleted ?? this.isCompleted,
@@ -105,22 +115,28 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       _categoriesCompleted = progress.categoriesCompleted;
 
       int catIdx = progress.categoryIndex;
+      int lvlIdx = progress.levelIndex;
+
       if (catIdx >= _categories.length) {
         catIdx = 0;
+        lvlIdx = 0;
+      } else if (lvlIdx >= WordSearchPlaying.levelsPerCategory) {
+        lvlIdx = 0;
       }
 
-      _generateBoard(catIdx);
+      _generateBoard(catIdx, lvlIdx);
     } catch (e) {
       emit(WordSearchError('Оюнду жүктөөдө ката чыкты: $e'));
     }
   }
 
-  void _generateBoard(int categoryIndex) {
+  void _generateBoard(int categoryIndex, int levelIndex) {
     const size = 6;
     final cat = _categories[categoryIndex];
-    final random = Random();
+    // Seeded Random for repeatable level generation
+    final random = Random((categoryIndex + 1) * 1000 + levelIndex * 37 + 13);
 
-    // Pick 4-5 words of length <= size
+    // Pick 4 words of length <= size
     final candidateWords = cat.words.where((w) => w.length >= 2 && w.length <= size).toList();
     candidateWords.shuffle(random);
     final targetWords = candidateWords.take(4).toList();
@@ -132,7 +148,7 @@ class WordSearchCubit extends Cubit<WordSearchState> {
     for (final word in targetWords) {
       bool placed = false;
       int attempts = 0;
-      while (!placed && attempts < 50) {
+      while (!placed && attempts < 100) {
         attempts++;
         final horizontal = random.nextBool();
         final row = random.nextInt(horizontal ? size : size - word.length + 1);
@@ -169,6 +185,15 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       }
     }
 
+    String categoryTitle = '${categoryIndex + 1}-топтом';
+    if (categoryIndex == 0) {
+      categoryTitle = '1-топтом (Жөнөкөй)';
+    } else if (categoryIndex == 1) {
+      categoryTitle = '2-топтом (Орточо)';
+    } else if (categoryIndex == 2) {
+      categoryTitle = '3-топтом (Татаал)';
+    }
+
     emit(WordSearchPlaying(
       board: WordSearchBoard(
         size: size,
@@ -177,7 +202,8 @@ class WordSearchCubit extends Cubit<WordSearchState> {
         foundWords: {},
       ),
       categoryIndex: categoryIndex,
-      categoryName: cat.name,
+      levelIndex: levelIndex,
+      categoryName: categoryTitle,
       totalCategories: _categories.length,
       isCompleted: false,
       scoreEarned: 0,
@@ -208,11 +234,13 @@ class WordSearchCubit extends Cubit<WordSearchState> {
         AudioController.instance.playLevelComplete();
         scoreEarned = (s.board.targetWords.length * 5) + 20;
 
-        final updated = await _scoreRepository.recordWordSearchCategoryCompleted(
+        final updated = await _scoreRepository.recordWordSearchLevelCompleted(
           categoryIndex: s.categoryIndex,
+          levelIndex: s.levelIndex,
           wordsFoundCount: s.board.targetWords.length,
           scoreEarned: scoreEarned,
-          totalCategories: _categories.length,
+          maxLevelsInCategory: WordSearchPlaying.levelsPerCategory,
+          maxCategories: _categories.length,
         );
         _totalScore = updated.totalScore;
         _categoriesCompleted = updated.categoriesCompleted;
@@ -232,11 +260,27 @@ class WordSearchCubit extends Cubit<WordSearchState> {
     }
   }
 
-  Future<void> nextCategory() async {
+  Future<void> nextLevel() async {
     if (state is! WordSearchPlaying) return;
     final s = state as WordSearchPlaying;
-    final nextIdx = (s.categoryIndex + 1) % _categories.length;
-    await _scoreRepository.saveWordSearchCurrentCategory(nextIdx);
-    _generateBoard(nextIdx);
+    int nextLevelIdx = s.levelIndex + 1;
+    int nextCategoryIdx = s.categoryIndex;
+
+    if (nextLevelIdx >= WordSearchPlaying.levelsPerCategory) {
+      nextCategoryIdx = _categories.isNotEmpty ? (s.categoryIndex + 1) % _categories.length : 0;
+      nextLevelIdx = 0;
+    }
+
+    await _scoreRepository.saveWordSearchCurrentPosition(nextCategoryIdx, nextLevelIdx);
+    _generateBoard(nextCategoryIdx, nextLevelIdx);
+  }
+
+  // Alias for backward compatibility
+  Future<void> nextCategory() => nextLevel();
+
+  Future<void> restartGame() async {
+    if (state is! WordSearchPlaying) return;
+    await _scoreRepository.saveWordSearchCurrentPosition(0, 0);
+    _generateBoard(0, 0);
   }
 }

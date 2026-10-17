@@ -240,7 +240,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   MenuCardButton(
                     title: 'Сөз издөө',
-                    subtitle: 'Торчодогу сөздөрдү тап • 3 деңгээл',
+                    subtitle: 'Торчодогу сөздөрдү тап • 30 деңгээл',
                     icon: Icons.grid_view_rounded,
                     primaryColor: const Color(0xFF10B981),
                     secondaryColor: const Color(0xFF059669),

@@ -1,4 +1,6 @@
-﻿import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
+import 'package:just_audio/just_audio.dart';
 import '../utils/asset_paths.dart';
 
 class AudioController {
@@ -16,6 +18,8 @@ class AudioController {
 
   Future<void> init() async {
     try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
       await _bgmPlayer.setLoopMode(LoopMode.one);
     } catch (_) {}
   }
@@ -23,7 +27,17 @@ class AudioController {
   Future<void> playMenuMusic() async {
     if (!isMusicEnabled) return;
     try {
+      await _bgmPlayer.setLoopMode(LoopMode.one);
       await _bgmPlayer.setAsset(AssetPaths.menuMusic);
+      await _bgmPlayer.play();
+    } catch (_) {}
+  }
+
+  Future<void> playGameplayMusic() async {
+    if (!isMusicEnabled) return;
+    try {
+      await _bgmPlayer.setLoopMode(LoopMode.one);
+      await _bgmPlayer.setAsset(AssetPaths.gameplayMusic);
       await _bgmPlayer.play();
     } catch (_) {}
   }
@@ -33,6 +47,8 @@ class AudioController {
       await _bgmPlayer.stop();
     } catch (_) {}
   }
+
+  Future<void> stopGameplayMusic() async => stopMenuMusic();
 
   Future<void> playSfx(String assetPath) async {
     if (!isSoundEnabled) return;
@@ -50,12 +66,23 @@ class AudioController {
   Future<void> playHint() async => playSfx(AssetPaths.hintSound);
   Future<void> playShuffle() async => playSfx(AssetPaths.shuffleSound);
 
+  bool _isAnthemLoaded = false;
+
   Future<void> playAnthem() async {
     try {
       await stopMenuMusic();
-      await _anthemPlayer.setAsset(AssetPaths.anthem);
+      if (!_isAnthemLoaded) {
+        await _anthemPlayer.setAsset(AssetPaths.anthem);
+        _isAnthemLoaded = true;
+      }
+      if (_anthemPlayer.processingState == ProcessingState.completed) {
+        await _anthemPlayer.seek(Duration.zero);
+      }
       await _anthemPlayer.play();
-    } catch (_) {}
+    } catch (e) {
+      _isAnthemLoaded = false;
+      debugPrint('Error playing anthem: $e');
+    }
   }
 
   Future<void> pauseAnthem() async {
@@ -67,11 +94,19 @@ class AudioController {
   Future<void> stopAnthem() async {
     try {
       await _anthemPlayer.stop();
+      await _anthemPlayer.seek(Duration.zero);
+    } catch (_) {}
+  }
+
+  Future<void> seekAnthem(Duration position) async {
+    try {
+      await _anthemPlayer.seek(position);
     } catch (_) {}
   }
 
   Stream<PlayerState> get anthemPlayerStateStream => _anthemPlayer.playerStateStream;
   Stream<Duration> get anthemPositionStream => _anthemPlayer.positionStream;
+  Stream<Duration?> get anthemDurationStream => _anthemPlayer.durationStream;
   Duration? get anthemDuration => _anthemPlayer.duration;
 
   void toggleMusic(bool enabled) {

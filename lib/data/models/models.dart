@@ -1,4 +1,4 @@
-﻿class AnimalModel {
+class AnimalModel {
   final String name;
   final String image;
 
@@ -43,6 +43,7 @@ class RegionModel {
   final String description;
   final double x; // Percent 0..1 on map
   final double y; // Percent 0..1 on map
+  final String? landmarkImage;
 
   const RegionModel({
     required this.id,
@@ -51,6 +52,7 @@ class RegionModel {
     required this.description,
     required this.x,
     required this.y,
+    this.landmarkImage,
   });
 }
 
