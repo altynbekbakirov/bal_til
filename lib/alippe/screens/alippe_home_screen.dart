@@ -42,7 +42,6 @@ class AlippeHomeScreen extends StatelessWidget {
     await AlippeAudio().stopAll();
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (context.mounted) {

@@ -31,7 +31,6 @@ class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
     await AlippeAudio().stopAll();
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (mounted) {

@@ -28,7 +28,6 @@ void main() async {
   // Default orientation is portrait for Bal Til; Alippe manages landscape mode on demand
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
   ]);
 
   SystemChrome.setSystemUIOverlayStyle(

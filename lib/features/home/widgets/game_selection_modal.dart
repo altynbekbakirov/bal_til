@@ -47,7 +47,6 @@ class GameSelectionModal extends StatelessWidget {
 
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -171,115 +170,128 @@ class GameSelectionModal extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    child: Row(
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
-                        const Icon(Icons.tune_rounded, size: 20, color: Color(0xFF64748B)),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Үн & Музыка:',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                        const Spacer(),
-                        // Music toggle chip
-                        InkWell(
-                          onTap: () {
-                            cubit.toggleMusic();
-                            AudioController.instance.playButtonClick();
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: audioState.isMusicEnabled
-                                  ? const Color(0xFFFEF3C7)
-                                  : const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: audioState.isMusicEnabled
-                                    ? const Color(0xFFF59E0B)
-                                    : const Color(0xFFCBD5E1),
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.tune_rounded, size: 20, color: Color(0xFF64748B)),
+                            SizedBox(width: 8),
+                            Text(
+                              'Үн & Музыка:',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF475569),
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  audioState.isMusicEnabled
-                                      ? Icons.music_note_rounded
-                                      : Icons.music_off_rounded,
-                                  size: 16,
+                          ],
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Music toggle chip
+                            InkWell(
+                              onTap: () {
+                                cubit.toggleMusic();
+                                AudioController.instance.playButtonClick();
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
                                   color: audioState.isMusicEnabled
-                                      ? const Color(0xFFB45309)
-                                      : const Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Музыка',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                      ? const Color(0xFFFEF3C7)
+                                      : const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
                                     color: audioState.isMusicEnabled
-                                        ? const Color(0xFF92400E)
-                                        : const Color(0xFF64748B),
+                                        ? const Color(0xFFF59E0B)
+                                        : const Color(0xFFCBD5E1),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Sound effects toggle chip
-                        InkWell(
-                          onTap: () {
-                            cubit.toggleSound();
-                            AudioController.instance.playButtonClick();
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: audioState.isSoundEnabled
-                                  ? const Color(0xFFD1FAE5)
-                                  : const Color(0xFFE2E8F0),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: audioState.isSoundEnabled
-                                    ? const Color(0xFF10B981)
-                                    : const Color(0xFFCBD5E1),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      audioState.isMusicEnabled
+                                          ? Icons.music_note_rounded
+                                          : Icons.music_off_rounded,
+                                      size: 16,
+                                      color: audioState.isMusicEnabled
+                                          ? const Color(0xFFB45309)
+                                          : const Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Музыка',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: audioState.isMusicEnabled
+                                            ? const Color(0xFF92400E)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  audioState.isSoundEnabled
-                                      ? Icons.volume_up_rounded
-                                      : Icons.volume_off_rounded,
-                                  size: 16,
+                            const SizedBox(width: 8),
+                            // Sound effects toggle chip
+                            InkWell(
+                              onTap: () {
+                                cubit.toggleSound();
+                                AudioController.instance.playButtonClick();
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
                                   color: audioState.isSoundEnabled
-                                      ? const Color(0xFF047857)
-                                      : const Color(0xFF64748B),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Эффект',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                      ? const Color(0xFFD1FAE5)
+                                      : const Color(0xFFE2E8F0),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
                                     color: audioState.isSoundEnabled
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFF64748B),
+                                        ? const Color(0xFF10B981)
+                                        : const Color(0xFFCBD5E1),
                                   ),
                                 ),
-                              ],
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      audioState.isSoundEnabled
+                                          ? Icons.volume_up_rounded
+                                          : Icons.volume_off_rounded,
+                                      size: 16,
+                                      color: audioState.isSoundEnabled
+                                          ? const Color(0xFF047857)
+                                          : const Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Эффект',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: audioState.isSoundEnabled
+                                            ? const Color(0xFF065F46)
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -422,7 +434,10 @@ class GameSelectionModal extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Title & Age
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               Text(
                 title,
@@ -432,7 +447,6 @@ class GameSelectionModal extends StatelessWidget {
                   color: Color(0xFF1E293B),
                 ),
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -448,17 +462,15 @@ class GameSelectionModal extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isCurrent) ...[
-                const Spacer(),
+              if (isCurrent)
                 const Text(
-                  'Азыркы оюн',
+                  '• Азыркы оюн',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.emeraldGreen,
                   ),
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 12),

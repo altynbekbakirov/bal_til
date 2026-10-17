@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bal_til/main.dart';
 import 'package:bal_til/features/map/screens/map_screen.dart';
+import 'package:bal_til/features/home/screens/home_screen.dart';
 import 'package:bal_til/alippe/widgets/alippe_zoom_item.dart';
 import 'package:bal_til/alippe/widgets/alippe_anim_button.dart';
 
@@ -85,5 +86,19 @@ void main() {
     await tester.tap(find.byType(AlippeAnimButton));
     await tester.pump(const Duration(milliseconds: 150));
     await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('HomeScreen stats row renders without overflow on narrow width', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({'has_shown_game_selector': true});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 }

@@ -13,4 +13,14 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
   }
+
+  override func application(
+    _ application: UIApplication,
+    supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    if UIDevice.current.userInterfaceIdiom == .pad {
+      return .all
+    }
+    return [.portrait, .landscapeLeft, .landscapeRight]
+  }
 }
