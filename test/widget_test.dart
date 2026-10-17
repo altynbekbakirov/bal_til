@@ -10,6 +10,7 @@ import 'package:bal_til/alippe/widgets/alippe_anim_button.dart';
 import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
 import 'package:bal_til/alippe/screens/sections/section_books_view.dart';
 import 'package:bal_til/alippe/core/alippe_cubit.dart';
+import 'package:bal_til/alippe/screens/dialogs/alippe_game_finish_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -224,5 +225,31 @@ void main() {
     // Modal dismissed
     expect(find.text('Оюн тандаңыз'), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('AlippeGameFinishDialog renders cleanly in landscape without overflow and displays text and action buttons', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AlippeGameFinishDialog(
+            score: 3,
+            onRestart: () {},
+            onNext: () {},
+            onHome: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Азаматсың!'), findsOneWidget);
+    expect(find.byType(AlippeAnimButton), findsNWidgets(3));
   });
 }
