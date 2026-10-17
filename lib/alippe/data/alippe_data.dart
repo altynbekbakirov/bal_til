@@ -84,8 +84,12 @@ class LetterItem {
   final String letter;
   final String word1;
   final String word2;
-  final String? sound1;
-  final String? sound2;
+  final String boyLetterSound;
+  final String boyPic1Sound;
+  final String? boyPic2Sound;
+  final String girlLetterSound;
+  final String girlPic1Sound;
+  final String? girlPic2Sound;
 
   const LetterItem({
     required this.key,
@@ -96,9 +100,17 @@ class LetterItem {
     required this.letter,
     required this.word1,
     required this.word2,
-    this.sound1,
-    this.sound2,
+    required this.boyLetterSound,
+    required this.boyPic1Sound,
+    this.boyPic2Sound,
+    required this.girlLetterSound,
+    required this.girlPic1Sound,
+    this.girlPic2Sound,
   });
+
+  String letterSound(bool isBoy) => isBoy ? boyLetterSound : girlLetterSound;
+  String pic1Sound(bool isBoy) => isBoy ? boyPic1Sound : girlPic1Sound;
+  String? pic2Sound(bool isBoy) => isBoy ? boyPic2Sound : girlPic2Sound;
 }
 
 class SpellingLetter {
@@ -206,50 +218,91 @@ class AlippeData {
     }
   }
 
-  static final List<({String letter, String word1, String word2, String? sound1, String? sound2})> _section0LetterDetails = [
-    (letter: 'А', word1: 'Ат', word2: 'Ай', sound1: 'assets/alippe/audio/items/horse.m4a', sound2: null),
-    (letter: 'Б', word1: 'Бант', word2: 'Балык', sound1: null, sound2: null),
-    (letter: 'В', word1: 'Велосипед', word2: 'Вилка', sound1: 'assets/alippe/audio/items/bicycle.m4a', sound2: null),
-    (letter: 'Г', word1: 'Гүл', word2: 'Гитара', sound1: null, sound2: 'assets/alippe/audio/items/guitar.m4a'),
-    (letter: 'Д', word1: 'Дарбыз', word2: 'Дарак', sound1: null, sound2: null),
-    (letter: 'Е', word1: 'Енот', word2: 'Ель', sound1: null, sound2: null),
-    (letter: 'Ё', word1: 'Ёлка', word2: 'Ёж', sound1: null, sound2: null),
-    (letter: 'Ж', word1: 'Жылкы', word2: 'Жылдыз', sound1: 'assets/alippe/audio/items/horse.m4a', sound2: null),
-    (letter: 'З', word1: 'Зебра', word2: 'Зонтик', sound1: 'assets/alippe/audio/items/horse.m4a', sound2: null),
-    (letter: 'И', word1: 'Ит', word2: 'Ийне', sound1: 'assets/alippe/audio/items/dog.m4a', sound2: null),
-    (letter: 'Й', word1: 'Йогурт', word2: 'Йод', sound1: null, sound2: null),
-    (letter: 'К', word1: 'Көпөлөк', word2: 'Китеп', sound1: null, sound2: null),
-    (letter: 'Л', word1: 'Лимон', word2: 'Лампочка', sound1: null, sound2: null),
-    (letter: 'М', word1: 'Машина', word2: 'Мышык', sound1: 'assets/alippe/audio/items/car.m4a', sound2: 'assets/alippe/audio/items/cat.m4a'),
-    (letter: 'Н', word1: 'Нан', word2: 'Нокот', sound1: null, sound2: null),
-    (letter: 'Ң', word1: 'Коңгуроо', word2: 'Торпоң', sound1: 'assets/alippe/audio/bell.mp3', sound2: 'assets/alippe/audio/items/cow.m4a'),
-    (letter: 'О', word1: 'Орок', word2: 'Оюнчук', sound1: null, sound2: null),
-    (letter: 'Ө', word1: 'Өрдөк', word2: 'Өрүк', sound1: 'assets/alippe/audio/items/duck.m4a', sound2: null),
-    (letter: 'П', word1: 'Пил', word2: 'Поезд', sound1: null, sound2: 'assets/alippe/audio/items/train.m4a'),
-    (letter: 'Р', word1: 'Ракета', word2: 'Радио', sound1: 'assets/alippe/audio/items/airplane.m4a', sound2: null),
-    (letter: 'С', word1: 'Саат', word2: 'Сабиз', sound1: 'assets/alippe/audio/items/clock.m4a', sound2: null),
-    (letter: 'Т', word1: 'Төө', word2: 'Топ', sound1: null, sound2: null),
-    (letter: 'У', word1: 'Улак', word2: 'Учак', sound1: 'assets/alippe/audio/items/sheep.m4a', sound2: 'assets/alippe/audio/items/airplane.m4a'),
-    (letter: 'Ү', word1: 'Үй', word2: 'Үтүк', sound1: null, sound2: null),
-    (letter: 'Ф', word1: 'Флаг', word2: 'Футбол', sound1: null, sound2: null),
-    (letter: 'Х', word1: 'Халат', word2: 'Хлеб', sound1: null, sound2: null),
-    (letter: 'Ц', word1: 'Цирк', word2: 'Цветок', sound1: null, sound2: null),
-    (letter: 'Ч', word1: 'Чака', word2: 'Чөйчөк', sound1: null, sound2: null),
-    (letter: 'Ш', word1: 'Шахмат', word2: 'Шыпыргы', sound1: null, sound2: null),
-    (letter: 'Щ', word1: 'Щетка', word2: 'Щит', sound1: null, sound2: null),
-    (letter: 'Ъ', word1: 'Ажыратуу белгиси', word2: 'Ажыратуу белгиси', sound1: null, sound2: null),
-    (letter: 'Ы', word1: 'Ымыркай', word2: 'Ышкын', sound1: null, sound2: null),
-    (letter: 'Ь', word1: 'Ичкертүү белгиси', word2: 'Ичкертүү белгиси', sound1: null, sound2: null),
-    (letter: 'Э', word1: 'Эчки', word2: 'Элик', sound1: 'assets/alippe/audio/items/sheep.m4a', sound2: null),
-    (letter: 'Ю', word1: 'Юбка', word2: 'Юрта', sound1: null, sound2: null),
-    (letter: 'Я', word1: 'Яблоко', word2: 'Якорь', sound1: null, sound2: null),
+  static final List<({String letter, String word1, String word2})> _section0LetterDetails = [
+    (letter: 'А', word1: 'Ат', word2: 'Ай'),
+    (letter: 'Б', word1: 'Белек', word2: 'Балык'),
+    (letter: 'В', word1: 'Велосипед', word2: 'Вилка'),
+    (letter: 'Г', word1: 'Гүл', word2: 'Гезит'),
+    (letter: 'Д', word1: 'Дарбыз', word2: 'Доктур'),
+    (letter: 'Е', word1: 'Жейрен', word2: 'Енот'),
+    (letter: 'Ё', word1: 'Боёк', word2: 'Коён'),
+    (letter: 'Ж', word1: 'Желек', word2: 'Жөжө'),
+    (letter: 'З', word1: 'Зебра', word2: 'Зым'),
+    (letter: 'И', word1: 'Илбирс', word2: 'Ийне'),
+    (letter: 'Й', word1: 'Кой', word2: 'Май'),
+    (letter: 'К', word1: 'Коон', word2: 'Күн'),
+    (letter: 'Л', word1: 'Лимон', word2: 'Лампочка'),
+    (letter: 'М', word1: 'Маймыл', word2: 'Машина'),
+    (letter: 'Н', word1: 'Нан', word2: 'Нөл'),
+    (letter: 'Ң', word1: 'Жаңгак', word2: 'Бадыраң'),
+    (letter: 'О', word1: 'От', word2: 'Ооз'),
+    (letter: 'Ө', word1: 'Өрдөк', word2: 'Өрүк'),
+    (letter: 'П', word1: 'Пил', word2: 'Топ'),
+    (letter: 'Р', word1: 'Ракета', word2: 'Карта'),
+    (letter: 'С', word1: 'Саат', word2: 'Сүрөт'),
+    (letter: 'Т', word1: 'Түндүк', word2: 'Тоок'),
+    (letter: 'У', word1: 'Уй', word2: 'Учак'),
+    (letter: 'Ү', word1: 'Үкү', word2: 'Үтүк'),
+    (letter: 'Ф', word1: 'Футбол', word2: 'Фартук'),
+    (letter: 'Х', word1: 'Хоккей', word2: 'Халат'),
+    (letter: 'Ц', word1: 'Милиция', word2: 'Мотоцикл'),
+    (letter: 'Ч', word1: 'Чана', word2: 'Чымчык'),
+    (letter: 'Ш', word1: 'Шахмат', word2: 'Шыпыргы'),
+    (letter: 'Щ', word1: 'Щетка', word2: 'Плащ'),
+    (letter: 'Ы', word1: 'Ышкырык', word2: 'Кайчы'),
+    (letter: 'Э', word1: 'Эшик', word2: 'Эчки'),
+    (letter: 'Ю', word1: 'Салют', word2: 'Аюу'),
+    (letter: 'Я', word1: 'Пияз', word2: 'Чаян'),
+    (letter: 'Ь', word1: 'Дельфин', word2: 'Медаль'),
+    (letter: 'Ъ', word1: 'Подъезд', word2: 'Подъезд'),
   ];
+
+  static const List<({String boyLetter, String boyPic1, String? boyPic2, String girlLetter, String girlPic1, String? girlPic2})> _section0Sounds = [
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_A.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_at.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_ay.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_A.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_at.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_ay.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_B.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_belek.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_balyk.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_B.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_belek.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_balyk.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_V.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_velosiped.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_vilka.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_V.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_velosiped.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_vilka.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_G.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_gul.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_gezit.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_G.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_gul.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_gezit.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_D.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_darbyz.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_doktur.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_D.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_darbyz.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_doktur.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_E.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_jeyren.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_enot.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_E.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_jeyren.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_enot.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_YO.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_boyok.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_koyon.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_YO.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_boyok.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_koyon.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_J.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_jelek.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_jojo.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_J.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_jelek.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_jojo.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_Z.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_zebra.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_zym.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_Z.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_zebra.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_zym.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_I.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_ilbirs.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_iyne.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_I.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_ilbirs.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_iyne.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_IY.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_koy.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_may.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_IY.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_koy.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_may.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_K.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_koon.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_kun.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_K.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_koon.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_kun.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_L.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_limon.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_lampochka.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_L.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_limon.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_lampochka.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_M.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_maymil.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_mashina.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_M.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_maymil.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_mashina.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_N.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_nan.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_nol.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_N.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_nan.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_nol.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_NG.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_jangak.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_badyrang.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_NG.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_jangak.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_badyrang.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_O.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_ot.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_ooz.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_O.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_ot.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_ooz.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_OO.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_ordok.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_oruk.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_OO.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_ordok.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_oruk.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_P.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_pil.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_top.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_P.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_pil.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_top.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_R.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_raketa.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_karta.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_R.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_raketa.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_karta.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_S.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_saat.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_surot.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_S.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_saat.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_surot.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_T.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_tunduk.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_took.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_T.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_tunduk.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_took.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_U.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_uy.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_uchak.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_U.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_uy.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_uchak.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_UU.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_uku.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_utuk.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_UU.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_uku.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_utuk.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_F.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_futbol.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_fartuk.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_F.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_futbol.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_fartuk.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_H.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_hokey.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_halat.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_H.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_hokey.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_halat.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_TS.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_militsia.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_mototsikl.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_TS.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_militsia.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_mototsikl.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_CH.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_chana.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_chymchyk.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_CH.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_chana.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_chymchyk.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_SH.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_shahmat.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_shypyrgy.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_SH.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_shahmat.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_shypyrgy.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_SHA.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_shetka.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_plash.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_SHA.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_shetka.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_plash.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_Y.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_yshkyryk.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_kaychy.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_Y.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_yshkyryk.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_kaychy.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_EE.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_eshik.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_echki.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_EE.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_eshik.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_echki.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_YU.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_salyut.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_ayu.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_YU.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_salyut.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_ayu.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_YA.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_piyaz.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_chayan.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_YA.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_piyaz.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_chayan.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_ICHKERTUU.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_delphin.mp3', boyPic2: 'assets/alippe/audio/alippe/boy/boy_medal.mp3', girlLetter: 'assets/alippe/audio/alippe/girl/g_ICHKERTUU.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_delphin.mp3', girlPic2: 'assets/alippe/audio/alippe/girl/g_medal.mp3'),
+    (boyLetter: 'assets/alippe/audio/alippe/boy/boy_azhyratuu.mp3', boyPic1: 'assets/alippe/audio/alippe/boy/boy_podyezd.mp3', boyPic2: null, girlLetter: 'assets/alippe/audio/alippe/girl/g_ajyratuu.mp3', girlPic1: 'assets/alippe/audio/alippe/girl/g_podyezd.mp3', girlPic2: null),
+  ];
+
 
   // Section 0: 36 alphabet letter items
   static List<LetterItem> get section0Items {
     return List.generate(36, (index) {
       final folder = index + 1;
       final info = _section0LetterDetails[index];
+      final sounds = _section0Sounds[index];
       return LetterItem(
         key: 'letter_$folder',
         pic1: 'assets/alippe/images/books/book1/section1/$folder/letter1.png',
@@ -259,8 +312,12 @@ class AlippeData {
         letter: info.letter,
         word1: info.word1,
         word2: info.word2,
-        sound1: info.sound1,
-        sound2: info.sound2,
+        boyLetterSound: sounds.boyLetter,
+        boyPic1Sound: sounds.boyPic1,
+        boyPic2Sound: sounds.boyPic2,
+        girlLetterSound: sounds.girlLetter,
+        girlPic1Sound: sounds.girlPic1,
+        girlPic2Sound: sounds.girlPic2,
       );
     });
   }

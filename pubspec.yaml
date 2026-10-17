@@ -46,6 +46,19 @@ flutter:
     - assets/alippe/audio/
     - assets/alippe/audio/items/
     - assets/alippe/audio/trash/
+    - assets/alippe/audio/alippe/
+    - assets/alippe/audio/alippe/boy/
+    - assets/alippe/audio/alippe/boy/numbers/
+    - assets/alippe/audio/alippe/boy/body_parts/
+    - assets/alippe/audio/alippe/boy/shapes/
+    - assets/alippe/audio/alippe/boy/colors/
+    - assets/alippe/audio/alippe/boy/measures/
+    - assets/alippe/audio/alippe/girl/
+    - assets/alippe/audio/alippe/girl/numbers/
+    - assets/alippe/audio/alippe/girl/body_parts/
+    - assets/alippe/audio/alippe/girl/shapes/
+    - assets/alippe/audio/alippe/girl/colors/
+    - assets/alippe/audio/alippe/girl/measures/
     - assets/alippe/images/
     - assets/alippe/images/bg/
     - assets/alippe/images/books/book1/

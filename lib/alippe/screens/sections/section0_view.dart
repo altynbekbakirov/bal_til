@@ -68,6 +68,7 @@ class _Section0ViewState extends State<Section0View> {
   @override
   Widget build(BuildContext context) {
     final item = _items[_letterIndex];
+    final isBoy = context.watch<AlippeCubit>().state.boyActive;
 
     return AlippeContainer(
       child: AlippeBookBase(
@@ -86,6 +87,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic1'),
                         imageAsset: item.pic1,
+                        soundAsset: item.letterSound(isBoy),
                         spokenText: item.letter,
                       ),
                     ),
@@ -94,6 +96,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic2'),
                         imageAsset: item.pic2,
+                        soundAsset: item.letterSound(isBoy),
                         spokenText: item.letter,
                       ),
                     ),
@@ -114,7 +117,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic3'),
                         imageAsset: item.pic3,
-                        soundAsset: item.sound1,
+                        soundAsset: item.pic1Sound(isBoy),
                         spokenText: item.word1,
                       ),
                     ),
@@ -123,7 +126,7 @@ class _Section0ViewState extends State<Section0View> {
                       child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic4'),
                         imageAsset: item.pic4,
-                        soundAsset: item.sound2,
+                        soundAsset: item.pic2Sound(isBoy),
                         spokenText: item.word2,
                       ),
                     ),
