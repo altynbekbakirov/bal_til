@@ -17,7 +17,7 @@ class AlippeAnimButton extends StatefulWidget {
     this.onPress,
     this.imageAsset,
     this.child,
-    this.scaleFactor = 1.35,
+    this.scaleFactor = 1.5,
     this.width,
     this.height,
     this.spokenText,
@@ -38,8 +38,8 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 180),
-      reverseDuration: const Duration(milliseconds: 240),
+      duration: const Duration(milliseconds: 160),
+      reverseDuration: const Duration(milliseconds: 220),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleFactor).animate(
       CurvedAnimation(
@@ -62,20 +62,26 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
 
   void _handleTapUp(TapUpDetails details) {
     if (widget.soundAsset != null && widget.soundAsset!.isNotEmpty) {
-      AlippeAudio().playSfx(widget.soundAsset!);
+      AlippeAudio().playSfx(widget.soundAsset!).catchError((_) {
+        AlippeAudio().playTap();
+        if (widget.spokenText != null && widget.spokenText!.isNotEmpty) {
+          AlippeTts().speak(widget.spokenText!);
+        }
+      });
     } else {
       AlippeAudio().playTap();
       if (widget.spokenText != null && widget.spokenText!.isNotEmpty) {
         AlippeTts().speak(widget.spokenText!);
       }
     }
-    Future.delayed(const Duration(milliseconds: 120), () {
+    final remainingMs = ((1.0 - _controller.value) * 160).round();
+    Future.delayed(Duration(milliseconds: remainingMs + 100), () {
       if (mounted) {
         _controller.reverse();
       }
     });
     if (widget.onPress != null) {
-      Future.delayed(const Duration(milliseconds: 180), () {
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
           widget.onPress?.call();
         }

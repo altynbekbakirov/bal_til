@@ -132,9 +132,10 @@ class AlippeAudio {
       await _sfxPlayer.setAsset(assetPath);
       await _sfxPlayer.seek(Duration.zero);
       await _sfxPlayer.setVolume(_soundVolume);
-      await _sfxPlayer.play();
+      _sfxPlayer.play();
     } catch (e) {
       debugPrint('Error playing SFX ($assetPath): $e');
+      rethrow;
     }
   }
 
