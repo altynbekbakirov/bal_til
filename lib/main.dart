@@ -11,6 +11,7 @@ import 'configs/routes.dart';
 import 'core/audio/audio_cubit.dart';
 import 'core/score/score_cubit.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/app_orientation.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -26,9 +27,7 @@ void main() async {
   HttpOverrides.global = MyHttpOverrides();
 
   // Default orientation is portrait for Bal Til; Alippe manages landscape mode on demand
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await AppOrientation.setPortrait();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

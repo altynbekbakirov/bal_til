@@ -9,6 +9,7 @@ import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/score/score_cubit.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_orientation.dart';
 import '../widgets/game_selection_modal.dart';
 import '../widgets/menu_button.dart';
 import '../widgets/settings_dialog.dart';
@@ -26,9 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     AudioController.instance.isBalTilActive = true;
     AlippeAudio().isAlippeActive = false;
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
+    AppOrientation.setPortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await context.read<AudioCubit>().loadPreferences();

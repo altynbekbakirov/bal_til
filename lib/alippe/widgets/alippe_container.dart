@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/utils/app_orientation.dart';
 import '../core/alippe_constants.dart';
 
 class AlippeContainer extends StatefulWidget {
@@ -20,10 +21,7 @@ class _AlippeContainerState extends State<AlippeContainer> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    AppOrientation.setLandscape();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 

@@ -6,6 +6,7 @@ import '../../../alippe/core/alippe_audio.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_orientation.dart';
 import '../../../configs/routes.dart';
 import 'settings_dialog.dart';
 
@@ -30,10 +31,7 @@ class GameSelectionModal extends StatelessWidget {
     await AlippeAudio().stopAll();
 
     // 2. Lock to landscape for Alippe
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    await AppOrientation.setLandscape();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     if (!context.mounted) return;

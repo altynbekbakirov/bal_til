@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../configs/routes.dart';
 import '../../core/audio/audio_controller.dart';
+import '../../core/utils/app_orientation.dart';
 import '../core/alippe_audio.dart';
 import '../core/alippe_constants.dart';
 import '../core/alippe_cubit.dart';
@@ -40,9 +41,7 @@ class AlippeHomeScreen extends StatelessWidget {
     AlippeAudio().isAlippeActive = false;
     AudioController.instance.isBalTilActive = true;
     await AlippeAudio().stopAll();
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
+    await AppOrientation.setPortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (context.mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
