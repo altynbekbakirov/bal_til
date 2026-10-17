@@ -33,11 +33,13 @@ class _AlippeSettingsDialogState extends State<AlippeSettingsDialog> {
       builder: (context, state) {
         final cubit = context.read<AlippeCubit>();
 
-        return Center(
-          child: SizedBox(
-            width: 700,
-            height: 480,
-            child: Stack(
+        return Material(
+          type: MaterialType.transparency,
+          child: Center(
+            child: SizedBox(
+              width: 700,
+              height: 480,
+              child: Stack(
               clipBehavior: Clip.none,
               children: [
                 // Background
@@ -187,8 +189,9 @@ class _AlippeSettingsDialogState extends State<AlippeSettingsDialog> {
               ],
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }

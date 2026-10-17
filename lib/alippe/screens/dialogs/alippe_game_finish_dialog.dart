@@ -64,11 +64,13 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 500,
-        height: 600,
-        child: Stack(
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: SizedBox(
+          width: 500,
+          height: 600,
+          child: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
@@ -200,6 +202,7 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

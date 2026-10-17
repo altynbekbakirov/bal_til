@@ -15,11 +15,13 @@ class AlippeInfoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 650,
-        height: 420,
-        child: Stack(
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: SizedBox(
+          width: 650,
+          height: 420,
+          child: Stack(
           clipBehavior: Clip.none,
           children: [
             Positioned.fill(
@@ -87,6 +89,7 @@ class AlippeInfoDialog extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

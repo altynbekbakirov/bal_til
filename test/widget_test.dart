@@ -31,4 +31,16 @@ void main() {
     expect(find.text('Бал тил'), findsOneWidget);
     expect(find.byIcon(Icons.sports_esports_rounded), findsOneWidget);
   });
+
+  testWidgets('AlippeSettingsDialog renders Sliders without Material error', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AlippeApp(),
+        ),
+      ),
+    );
+    await tester.pump();
+  });
 }
