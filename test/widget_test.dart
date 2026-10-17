@@ -74,7 +74,7 @@ void main() {
               width: 100,
               height: 100,
               imageAsset: 'assets/alippe/images/books/book1/section1/1/pic1.png',
-              soundAsset: 'assets/alippe/audio/items/horse.m4a',
+              soundAsset: 'assets/alippe/audio/alippe/boy/at.m4a',
               spokenText: 'Ат',
             ),
           ),
@@ -99,6 +99,33 @@ void main() {
     SharedPreferences.setMockInitialValues({'has_shown_game_selector': true});
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('GameSelectionModal allows selecting game on card tap', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Оюн тандаңыз'), findsOneWidget);
+    expect(find.text('«Бал тил»'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('«Бал тил»'));
+    await tester.pumpAndSettle();
+
+    // Tap directly on the Bal Til card text (not the button)
+    await tester.tap(find.text('«Бал тил»'));
+    await tester.pumpAndSettle();
+
+    // Modal dismissed
+    expect(find.text('Оюн тандаңыз'), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 }
