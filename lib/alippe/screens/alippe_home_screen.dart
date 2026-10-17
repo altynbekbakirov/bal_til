@@ -36,35 +36,43 @@ class AlippeHomeScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _exitAlippe(BuildContext context) async {
+    await AlippeAudio().stopAll();
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
+      if (AudioController.instance.isMusicEnabled) {
+        AudioController.instance.playMenuMusic();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AlippeCubit, AlippeState>(
-      builder: (context, state) {
-        return AlippeContainer(
-          child: Row(
-            children: [
-              // Sidebar
-              AlippeSidebar(
-                onSettings: () => AlippeSettingsDialog.show(context),
-                onBack: () async {
-                  await AlippeAudio().stopAll();
-                  await SystemChrome.setPreferredOrientations([
-                    DeviceOrientation.portraitUp,
-                    DeviceOrientation.portraitDown,
-                  ]);
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                  if (context.mounted) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
-                    if (AudioController.instance.isMusicEnabled) {
-                      AudioController.instance.playMenuMusic();
-                    }
-                  }
-                },
-                onPlay: () {
-                  final lastSec = state.lastSection;
-                  Navigator.of(context).pushNamed('/section', arguments: lastSec);
-                },
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _exitAlippe(context);
+      },
+      child: BlocBuilder<AlippeCubit, AlippeState>(
+        builder: (context, state) {
+          return AlippeContainer(
+            child: Row(
+              children: [
+                // Sidebar
+                AlippeSidebar(
+                  onSettings: () => AlippeSettingsDialog.show(context),
+                  onBack: () => _exitAlippe(context),
+                  onPlay: () {
+                    final lastSec = state.lastSection;
+                    Navigator.of(context).pushNamed('/section', arguments: lastSec);
+                  },
+                ),
 
               // 6 Books Grid (2 rows of 3 books)
               Expanded(
@@ -101,8 +109,9 @@ class AlippeHomeScreen extends StatelessWidget {
           ),
         );
       },
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBookItem(BuildContext context, AlippeBookModel book, int score) {
     return Expanded(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../configs/routes.dart';
 import '../../core/audio/audio_controller.dart';
 import '../core/alippe_audio.dart';
 import '../core/alippe_constants.dart';
@@ -14,34 +16,59 @@ class AlippeSplashScreen extends StatefulWidget {
 }
 
 class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
+  bool _cancelled = false;
+
   @override
   void initState() {
     super.initState();
     _initAndNavigate();
   }
 
+  Future<void> _cancelAndExit() async {
+    _cancelled = true;
+    await AlippeAudio().stopAll();
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
+      if (AudioController.instance.isMusicEnabled) {
+        AudioController.instance.playMenuMusic();
+      }
+    }
+  }
+
   Future<void> _initAndNavigate() async {
     await AudioController.instance.stopAll();
 
-    if (!mounted) return;
+    if (!mounted || _cancelled) return;
     final cubit = context.read<AlippeCubit>();
     await cubit.init();
     await AlippeAudio().init();
-    if (AlippeAudio().isMusicEnabled) {
+    if (AlippeAudio().isMusicEnabled && !_cancelled) {
       await AlippeAudio().startMusic();
     }
 
     await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
+    if (!mounted || _cancelled) return;
 
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override
   Widget build(BuildContext context) {
-    return const AlippeContainer(
-      bgImage: AlippeAssets.splashBg,
-      child: SizedBox.expand(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _cancelAndExit();
+      },
+      child: const AlippeContainer(
+        bgImage: AlippeAssets.splashBg,
+        child: SizedBox.expand(),
+      ),
     );
   }
 }

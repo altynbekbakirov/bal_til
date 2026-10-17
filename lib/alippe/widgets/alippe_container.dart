@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/alippe_constants.dart';
 
-class AlippeContainer extends StatelessWidget {
+class AlippeContainer extends StatefulWidget {
   final Widget child;
   final String bgImage;
 
@@ -12,6 +13,21 @@ class AlippeContainer extends StatelessWidget {
   });
 
   @override
+  State<AlippeContainer> createState() => _AlippeContainerState();
+}
+
+class _AlippeContainerState extends State<AlippeContainer> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
@@ -19,7 +35,7 @@ class AlippeContainer extends StatelessWidget {
         children: [
           // Background covering full screen
           Image.asset(
-            bgImage,
+            widget.bgImage,
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
@@ -33,7 +49,7 @@ class AlippeContainer extends StatelessWidget {
                 child: SizedBox(
                   width: 1280,
                   height: 720,
-                  child: child,
+                  child: widget.child,
                 ),
               ),
             ),
