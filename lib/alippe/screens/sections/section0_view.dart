@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_cubit.dart';
 import '../../core/alippe_tts.dart';
 import '../../data/alippe_data.dart';
+import '../../widgets/alippe_anim_button.dart';
 import '../../widgets/alippe_book_base.dart';
 import '../../widgets/alippe_container.dart';
-import '../../widgets/alippe_zoom_item.dart';
 import '../dialogs/alippe_game_finish_dialog.dart';
 
 class Section0View extends StatefulWidget {
@@ -83,18 +83,20 @@ class _Section0ViewState extends State<Section0View> {
                 child: Column(
                   children: [
                     Expanded(
-                      child: AlippeZoomItem(
+                      child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic1'),
                         imageAsset: item.pic1,
                         spokenText: item.letter,
+                        scaleFactor: 1.45,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: AlippeZoomItem(
+                      child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic2'),
                         imageAsset: item.pic2,
                         spokenText: item.letter,
+                        scaleFactor: 1.45,
                       ),
                     ),
                   ],
@@ -111,18 +113,20 @@ class _Section0ViewState extends State<Section0View> {
                 child: Column(
                   children: [
                     Expanded(
-                      child: AlippeZoomItem(
+                      child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic3'),
                         imageAsset: item.pic3,
                         spokenText: item.word1,
+                        scaleFactor: 1.45,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: AlippeZoomItem(
+                      child: AlippeAnimButton(
                         key: ValueKey('letter_${_letterIndex}_pic4'),
                         imageAsset: item.pic4,
                         spokenText: item.word2,
+                        scaleFactor: 1.45,
                       ),
                     ),
                   ],

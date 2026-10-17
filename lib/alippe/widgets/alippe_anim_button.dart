@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/alippe_audio.dart';
+import '../core/alippe_tts.dart';
 
 class AlippeAnimButton extends StatefulWidget {
   final VoidCallback? onPress;
@@ -8,15 +9,17 @@ class AlippeAnimButton extends StatefulWidget {
   final double scaleFactor;
   final double? width;
   final double? height;
+  final String? spokenText;
 
   const AlippeAnimButton({
     super.key,
     this.onPress,
     this.imageAsset,
     this.child,
-    this.scaleFactor = 1.15,
+    this.scaleFactor = 1.35,
     this.width,
     this.height,
+    this.spokenText,
   });
 
   @override
@@ -33,10 +36,15 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 180),
+      reverseDuration: const Duration(milliseconds: 240),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleFactor).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutBack,
+        reverseCurve: Curves.easeOutQuad,
+      ),
     );
   }
 
@@ -47,16 +55,21 @@ class _AlippeAnimButtonState extends State<AlippeAnimButton>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    if (widget.onPress != null) {
-      _controller.forward();
-    }
+    _controller.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
+    AlippeAudio().playTap();
+    if (widget.spokenText != null && widget.spokenText!.isNotEmpty) {
+      AlippeTts().speak(widget.spokenText!);
+    }
+    Future.delayed(const Duration(milliseconds: 120), () {
+      if (mounted) {
+        _controller.reverse();
+      }
+    });
     if (widget.onPress != null) {
-      _controller.reverse();
-      AlippeAudio().playTap();
-      Future.delayed(const Duration(milliseconds: 100), () {
+      Future.delayed(const Duration(milliseconds: 180), () {
         if (mounted) {
           widget.onPress?.call();
         }
