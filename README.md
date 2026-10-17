@@ -1,4 +1,4 @@
-﻿# 🐝 Бал тил 2.0 (Alippe 2.0)
+# 🐝 Бал тил 2.0 (Alippe 2.0)
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.47+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.13+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
@@ -39,7 +39,7 @@
 ## 📂 Долбоордун түзүмү (Project Structure)
 
 ```text
-ball_til/
+bal_til/
 ├── assets/
 │   ├── audio/              # Үн эффекттери, фондук музыка жана гимн
 │   ├── data/               # Кыргызча деңгээлдер жана маалыматтар (JSON)
@@ -74,8 +74,8 @@ ball_til/
 ### Орнотуу:
 1. Репозиторийди көчүрүп алыңыз:
    ```bash
-   git clone https://github.com/<your-username>/ball_til.git
-   cd ball_til
+   git clone https://github.com/<your-username>/bal_til.git
+   cd bal_til
    ```
 
 2. Көз карандылыктарды (пакеттерди) жүктөп алыңыз:
