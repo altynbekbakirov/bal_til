@@ -27,7 +27,7 @@ void main() async {
   HttpOverrides.global = MyHttpOverrides();
 
   // Default orientation is portrait for Bal Til; Alippe manages landscape mode on demand
-  await AppOrientation.setPortrait();
+  await AppOrientation.forcePortrait();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -52,9 +52,9 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Бал тил & Алиппе',
+        title: 'Бал тил',
         theme: AppTheme.lightTheme,
-        initialRoute: Routers.home,
+        initialRoute: Routers.gameSelect,
         routes: Routers.routes,
         onGenerateRoute: Routers.onGenerateRoute,
       ),

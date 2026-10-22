@@ -308,7 +308,7 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
         AlippeAnimButton(
           width: smBtnSize,
           height: smBtnSize * (120.0 / 115.0),
-          scaleFactor: 1.15,
+          scaleFactor: 1.3,
           imageAsset: AlippeAssets.finishListBtn,
           onPress: () {
             Navigator.of(context).pop();
@@ -324,7 +324,7 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
         AlippeAnimButton(
           width: lgBtnSize,
           height: lgBtnSize * (155.0 / 150.0),
-          scaleFactor: 1.15,
+          scaleFactor: 1.3,
           imageAsset: AlippeAssets.finishPlayBtn,
           onPress: () {
             Navigator.of(context).pop();
@@ -336,7 +336,7 @@ class _AlippeGameFinishDialogState extends State<AlippeGameFinishDialog>
         AlippeAnimButton(
           width: smBtnSize,
           height: smBtnSize * (120.0 / 115.0),
-          scaleFactor: 1.15,
+          scaleFactor: 1.3,
           imageAsset: AlippeAssets.finishRestartBtn,
           onPress: () {
             Navigator.of(context).pop();

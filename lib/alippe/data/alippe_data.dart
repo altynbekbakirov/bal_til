@@ -571,12 +571,12 @@ class AlippeData {
       case 5:
         return isBoy
             ? const [
+                'assets/alippe/audio/alippe/boy/measures/boy_az.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_kop.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_solgo.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ongo.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ildiy.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_oido.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_jumshak.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_katuu.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_chon.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_kichine.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_jaryk.mp3',
@@ -587,16 +587,16 @@ class AlippeData {
                 'assets/alippe/audio/alippe/boy/measures/boy_oor.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ysyk.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_muzdak.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_az.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_kop.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_katuu.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_jumshak.mp3',
               ]
             : const [
-                'assets/alippe/audio/alippe/girl/measures/g_ongo.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_az.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_kop.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_solgo.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_ongo.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_ildiy.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_oido.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_jumshak.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_katuu.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_chon.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_kichine.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_jaryk.mp3',
@@ -607,24 +607,24 @@ class AlippeData {
                 'assets/alippe/audio/alippe/girl/measures/g_oor.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_ysyk.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_muzdak.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_az.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_kop.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_katuu.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_jumshak.mp3',
               ];
       case 6:
         return isBoy
             ? const [
                 'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_kol.mp3',
-                'assets/alippe/audio/alippe/boy/body_parts/boy_but.mp3',
+                'assets/alippe/audio/alippe/boy/body_parts/boy_kol.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
-                'assets/alippe/audio/alippe/boy/body_parts/boy_koz.mp3',
+                'assets/alippe/audio/alippe/boy/body_parts/boy_but.mp3',
               ]
             : const [
                 'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_kol.mp3',
-                'assets/alippe/audio/alippe/girl/body_parts/g_but.mp3',
+                'assets/alippe/audio/alippe/girl/body_parts/g_kol.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
-                'assets/alippe/audio/alippe/girl/body_parts/g_koz.mp3',
+                'assets/alippe/audio/alippe/girl/body_parts/g_but.mp3',
               ];
       case 7:
         return isBoy
@@ -674,11 +674,20 @@ class AlippeData {
         ];
       case 5:
         return const [
-          'Оңго', 'Солго', 'Ылдый', 'Өйдө', 'Жумшак', 'Катуу',
-          'Чоң', 'Кичине', 'Жарык', 'Караңгы', 'Алыс', 'Жакын',
-          'Жеңил', 'Оор', 'Ысык', 'Муздак', 'Аз', 'Көп',
+          'Аз', 'Көп',
+          'Солго', 'Оңго',
+          'Ылдый', 'Өйдө',
+          'Чоң', 'Кичине',
+          'Жарык', 'Караңгы',
+          'Алыс', 'Жакын',
+          'Жеңил', 'Оор',
+          'Ысык', 'Муздак',
+          'Катуу', 'Жумшак',
         ];
       case 6:
+        return const [
+          'Баш', 'Кол', 'Кол', 'Баш', 'Бут',
+        ];
       case 7:
         return const [
           'Баш', 'Көз', 'Мурун', 'Ооз', 'Кулак', 'Чач', 'Тил', 'Каш', 'Тиш',
@@ -688,11 +697,15 @@ class AlippeData {
     }
   }
 
-  // Section 8: 21 silhouette items
+  // Section 1: Spelling word game
+  static const String section1PicBg = 'assets/alippe/images/books/book1/section2/items/pic_bg.png';
+
+  // Section 8: 27 silhouette items
+  static const String section8Bg = 'assets/alippe/images/books/book5/section1/bg.png';
   static List<String> get section8Items =>
-      List.generate(21, (i) => 'assets/alippe/images/books/book5/section1/items/${i + 1}.png');
+      List.generate(27, (i) => 'assets/alippe/images/books/book5/section1/items/${i + 1}.png');
   static List<String> get section8Placeholders =>
-      List.generate(21, (i) => 'assets/alippe/images/books/book5/section1/placeholders/${i + 1}.png');
+      List.generate(27, (i) => 'assets/alippe/images/books/book5/section1/placeholders/${i + 1}.png');
 
   // Section 10: Memory cards
   static const String cardFront = 'assets/alippe/images/books/book6/section1/card_front.png';
@@ -701,6 +714,6 @@ class AlippeData {
   static List<String> get section10Items => [
     ...List.generate(10, (i) => 'assets/alippe/images/books/book6/section1/items1/${i + 1}.png'),
     ...List.generate(8, (i) => 'assets/alippe/images/books/book6/section1/items2/${i + 1}.png'),
-    ...List.generate(2, (i) => 'assets/alippe/images/books/book6/section1/items3/${i + 1}.png'),
+    ...List.generate(10, (i) => 'assets/alippe/images/books/book6/section1/items3/${i + 1}.png'),
   ];
 }

@@ -2,18 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class AppOrientation {
-  /// Safely switch to portrait mode.
-  /// On iOS 16+, changing directly from landscape to portrait throws Code 101
-  /// if the view controller does not currently declare portrait support.
-  /// First allowing both orientations allows iOS to update its scene mask before
-  /// locking to portrait.
+  static bool _isLandscape = false;
+
+  /// Returns true if the app has requested landscape orientation.
+  static bool get isLandscape => _isLandscape;
+
+  /// Lock exclusively to portrait mode without switching through landscape.
   static Future<void> setPortrait() async {
+    if (!_isLandscape) return;
+    _isLandscape = false;
     try {
-      await SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
@@ -22,14 +20,36 @@ class AppOrientation {
     }
   }
 
-  /// Safely switch to landscape mode.
+  /// Lock exclusively to landscape mode without switching through portrait.
   static Future<void> setLandscape() async {
+    if (_isLandscape) return;
+    _isLandscape = true;
     try {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
+      ]);
+    } catch (e) {
+      debugPrint('Failed to change device orientation to landscape: $e');
+    }
+  }
+
+  /// Force orientation lock to portrait regardless of current cached state.
+  static Future<void> forcePortrait() async {
+    _isLandscape = false;
+    try {
+      await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
       ]);
+    } catch (e) {
+      debugPrint('Failed to change device orientation to portrait: $e');
+    }
+  }
+
+  /// Force orientation lock to landscape regardless of current cached state.
+  static Future<void> forceLandscape() async {
+    _isLandscape = true;
+    try {
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,

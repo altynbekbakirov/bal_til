@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../alippe/core/alippe_audio.dart';
+import '../../../alippe/core/alippe_cubit.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/theme/app_theme.dart';
@@ -23,6 +25,9 @@ class GameSelectionModal extends StatelessWidget {
   }
 
   static Future<void> launchAlippe(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_played_game', 'alippe');
+
     // 1. Mark active game and silence Bal Til audio before switching
     AudioController.instance.isBalTilActive = false;
     AlippeAudio().isAlippeActive = true;
@@ -31,11 +36,19 @@ class GameSelectionModal extends StatelessWidget {
     await AlippeAudio().stopAll();
 
     // 2. Lock to landscape for Alippe
-    await AppOrientation.setLandscape();
+    AppOrientation.setLandscape();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     if (!context.mounted) return;
-    Navigator.of(context).pushNamed(Routers.alippe);
+    final cubit = context.read<AlippeCubit>();
+    await cubit.init();
+    await AlippeAudio().init();
+    if (AlippeAudio().isMusicEnabled) {
+      await AlippeAudio().startMusic();
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pushNamed(Routers.alippeHome);
   }
 
   @override
@@ -225,8 +238,11 @@ class GameSelectionModal extends StatelessWidget {
                             // Sound effects toggle chip
                             InkWell(
                               onTap: () {
+                                final willEnable = !audioState.isSoundEnabled;
                                 cubit.toggleSound();
-                                AudioController.instance.playButtonClick();
+                                if (willEnable) {
+                                  AudioController.instance.playButtonClick();
+                                }
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: AnimatedContainer(
@@ -332,7 +348,11 @@ class GameSelectionModal extends StatelessWidget {
                 buttonText: '«Бал тилди» улантуу (7–10 жаш)',
                 buttonColor: AppTheme.emeraldGreen,
                 isCurrent: true,
-                onSelect: () => Navigator.pop(context),
+                onSelect: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('last_played_game', 'bal_til');
+                  if (context.mounted) Navigator.pop(context);
+                },
               ).animate().fadeIn(delay: 100.ms, duration: 300.ms).slideY(begin: 0.08, duration: 300.ms),
             ],
           ),

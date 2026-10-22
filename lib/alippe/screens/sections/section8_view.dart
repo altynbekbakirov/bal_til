@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_audio.dart';
+import '../../core/alippe_constants.dart';
 import '../../core/alippe_cubit.dart';
 import '../../data/alippe_data.dart';
 import '../../widgets/alippe_anim_button.dart';
-import '../../widgets/alippe_book_base.dart';
 import '../../widgets/alippe_container.dart';
 import '../dialogs/alippe_game_finish_dialog.dart';
 
@@ -17,10 +17,13 @@ class Section8View extends StatefulWidget {
 
 class _Section8ViewState extends State<Section8View> {
   int _round = 0;
-  final int _itemsPerRound = 3;
-  late List<int> _currentRoundItemIndices;
+  static const int _itemsPerRound = 3;
+  static const int _totalRounds = 9; // 27 items / 3 items per round
+
+  late List<int> _currentPlaceholders;
+  late List<int> _currentItems;
   late List<bool> _matched;
-  late List<int> _shuffledAvailable;
+  late Set<int> _availableItemIds;
 
   @override
   void initState() {
@@ -29,152 +32,230 @@ class _Section8ViewState extends State<Section8View> {
   }
 
   void _setupRound() {
-    final start = _round * _itemsPerRound;
-    _currentRoundItemIndices = List.generate(
+    final start = (_round * _itemsPerRound) % AlippeData.section8Items.length;
+    final itemIndices = List.generate(
       _itemsPerRound,
       (i) => (start + i) % AlippeData.section8Items.length,
     );
+
+    // Placeholders are randomly ordered among the 3
+    _currentPlaceholders = List<int>.from(itemIndices)..shuffle();
+    // Draggable items are also randomly ordered
+    _currentItems = List<int>.from(itemIndices)..shuffle();
+
     _matched = List.filled(_itemsPerRound, false);
-    _shuffledAvailable = List<int>.from(_currentRoundItemIndices)..shuffle();
+    _availableItemIds = Set<int>.from(itemIndices);
   }
 
   void _onMatched(int slotIdx, int itemIdx) {
-    if (_currentRoundItemIndices[slotIdx] == itemIdx) {
-      AlippeAudio().playGood();
-      setState(() {
-        _matched[slotIdx] = true;
-        _shuffledAvailable.remove(itemIdx);
-      });
+    AlippeAudio().playSuccessPin();
 
-      if (!_matched.contains(false)) {
-        // Round completed!
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (!mounted) return;
-          if (_round < 6) {
-            setState(() {
-              _round++;
-              _setupRound();
-            });
-          } else {
-            // Section 8 finished!
-            context.read<AlippeCubit>().addScore(4, 2);
-            AlippeGameFinishDialog.show(
-              context: context,
-              score: 3,
-              onRestart: () {
-                setState(() {
-                  _round = 0;
-                  _setupRound();
-                });
-              },
-              onNext: () {
-                Navigator.of(context).pushReplacementNamed('/section', arguments: 9);
-              },
-              onHome: () {
-                AlippeGameFinishDialog.navigateToAlippeHome(context);
-              },
-            );
-          }
-        });
-      }
-    } else {
-      AlippeAudio().playFail();
+    setState(() {
+      _matched[slotIdx] = true;
+      _availableItemIds.remove(itemIdx);
+    });
+
+    if (!_matched.contains(false)) {
+      // All 3 items matched in current round!
+      AlippeAudio().playGood();
+
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        if (_round < _totalRounds - 1) {
+          setState(() {
+            _round++;
+            _setupRound();
+          });
+        } else {
+          // Section 8 completed!
+          context.read<AlippeCubit>().addScore(4, 2);
+          AlippeGameFinishDialog.show(
+            context: context,
+            score: 3,
+            onRestart: () {
+              AlippeAudio().playReset();
+              setState(() {
+                _round = 0;
+                _setupRound();
+              });
+            },
+            onNext: () {
+              Navigator.of(context).pushReplacementNamed('/section', arguments: 9);
+            },
+            onHome: () {
+              AlippeGameFinishDialog.navigateToAlippeHome(context);
+            },
+          );
+        }
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlippeContainer(
-      child: AlippeBookBase(
-        bookId: 4,
-        onLeftPress: _round > 0
-            ? () {
-                setState(() {
-                  _round--;
-                  _setupRound();
-                });
-              }
-            : null,
-        onRightPress: _round < 6
-            ? () {
-                setState(() {
-                  _round++;
-                  _setupRound();
-                });
-              }
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Top Row: Silhouettes (Placeholders)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_itemsPerRound, (slotIdx) {
-                  final itemIdx = _currentRoundItemIndices[slotIdx];
-                  final isMatched = _matched[slotIdx];
-
-                  return DragTarget<int>(
-                    onWillAcceptWithDetails: (details) => !isMatched,
-                    onAcceptWithDetails: (details) =>
-                        _onMatched(slotIdx, details.data),
-                    builder: (context, candidateData, rejectedData) {
-                      return Container(
-                        width: 140,
-                        height: 140,
-                        padding: const EdgeInsets.all(8),
-                        child: Image.asset(
-                          isMatched
-                              ? AlippeData.section8Items[itemIdx]
-                              : AlippeData.section8Placeholders[itemIdx],
-                          fit: BoxFit.contain,
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ),
-
-              const Divider(color: Colors.brown, thickness: 2, height: 40),
-
-              // Bottom Row: Draggable colorful items
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: _shuffledAvailable.map((itemIdx) {
-                  final imgPath = AlippeData.section8Items[itemIdx];
-
-                  return Draggable<int>(
-                    data: itemIdx,
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: Image.asset(
-                        imgPath,
-                        width: 150,
-                        height: 150,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    childWhenDragging: Opacity(
-                      opacity: 0.3,
-                      child: Image.asset(
-                        imgPath,
-                        width: 130,
-                        height: 130,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    child: AlippeAnimButton(
-                      width: 130,
-                      height: 130,
-                      imageAsset: imgPath,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Sidebar with Restart and Back buttons (matches React Section 8)
+          Container(
+            width: 100,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            child: Column(
+              children: [
+                AlippeAnimButton(
+                  width: 75,
+                  height: 75,
+                  scaleFactor: 1.3,
+                  imageAsset: AlippeAssets.sideRestart,
+                  onPress: () {
+                    AlippeAudio().playReset();
+                    setState(() {
+                      _round = 0;
+                      _setupRound();
+                    });
+                  },
+                ),
+                const Spacer(),
+                AlippeAnimButton(
+                  width: 75,
+                  height: 75,
+                  scaleFactor: 1.3,
+                  imageAsset: AlippeAssets.sideBack,
+                  onPress: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          // Main Game Area (Top Row: Silhouettes on BG, Bottom Row: Draggable Items)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 16, 24, 16),
+              child: Column(
+                children: [
+                  // Top Row: 3 Placeholders with frame background
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: List.generate(_itemsPerRound, (slotIdx) {
+                        final id = _currentPlaceholders[slotIdx];
+                        final isSlotMatched = _matched[slotIdx];
+
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            child: DragTarget<int>(
+                              onWillAcceptWithDetails: (details) =>
+                                  !isSlotMatched && details.data == id,
+                              onAcceptWithDetails: (details) =>
+                                  _onMatched(slotIdx, details.data),
+                              builder: (context, candidateData, rejectedData) {
+                                return Center(
+                                  child: AspectRatio(
+                                    aspectRatio: 256 / 300,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      fit: StackFit.expand,
+                                      children: [
+                                        // Frame background
+                                        Image.asset(
+                                          AlippeData.section8Bg,
+                                          fit: BoxFit.contain,
+                                        ),
+
+                                        // Silhouette image
+                                        Padding(
+                                          padding: const EdgeInsets.all(20.0),
+                                          child: Image.asset(
+                                            AlippeData.section8Placeholders[id],
+                                            fit: BoxFit.contain,
+                                          ),
+                                        ),
+
+                                        // Color image overlay on match
+                                        if (isSlotMatched)
+                                          Padding(
+                                            padding: const EdgeInsets.all(20.0),
+                                            child: Image.asset(
+                                              AlippeData.section8Items[id],
+                                              fit: BoxFit.contain,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Bottom Row: 3 Draggable items
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: List.generate(_itemsPerRound, (itemIdx) {
+                        final id = _currentItems[itemIdx];
+                        final isAvailable = _availableItemIds.contains(id);
+
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            child: isAvailable
+                                ? Center(
+                                    child: AspectRatio(
+                                      aspectRatio: 256 / 300,
+                                      child: Draggable<int>(
+                                        data: id,
+                                        onDragStarted: () => AlippeAudio().playPickUp(),
+                                        onDraggableCanceled: (velocity, offset) =>
+                                            AlippeAudio().playBackSwoosh(),
+                                        feedback: Material(
+                                          color: Colors.transparent,
+                                          child: Transform.scale(
+                                            scale: 1.25,
+                                            child: SizedBox(
+                                              width: 140,
+                                              height: 140,
+                                              child: Image.asset(
+                                                AlippeData.section8Items[id],
+                                                fit: BoxFit.contain,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        childWhenDragging: const Opacity(
+                                          opacity: 0.0,
+                                          child: SizedBox.shrink(),
+                                        ),
+                                        child: AlippeAnimButton(
+                                          width: 140,
+                                          height: 140,
+                                          scaleFactor: 1.2,
+                                          imageAsset: AlippeData.section8Items[id],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

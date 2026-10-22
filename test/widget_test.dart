@@ -11,8 +11,14 @@ import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
 import 'package:bal_til/alippe/screens/sections/section_books_view.dart';
 import 'package:bal_til/alippe/core/alippe_cubit.dart';
 import 'package:bal_til/alippe/screens/dialogs/alippe_game_finish_dialog.dart';
+import 'package:bal_til/alippe/screens/sections/section1_view.dart';
+import 'package:bal_til/alippe/screens/sections/section8_view.dart';
+import 'package:bal_til/alippe/screens/sections/section9_view.dart';
 import 'package:bal_til/alippe/screens/sections/section10_view.dart';
+import 'package:bal_til/alippe/data/alippe_data.dart';
 import 'package:bal_til/configs/routes.dart';
+import 'package:bal_til/features/game_select/screens/game_select_screen.dart';
+import 'package:bal_til/core/audio/audio_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -33,12 +39,15 @@ void main() {
     expect(find.text('Нарын'), findsOneWidget);
   });
 
-  testWidgets('MyApp smoke test with HomeScreen and Game Selector', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({'has_shown_game_selector': true});
+  testWidgets('MyApp smoke test with GameSelectScreen and Game Selector', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'last_played_game': 'alippe'});
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Бал тил'), findsOneWidget);
+    expect(find.text('Оюн тандаңыз'), findsOneWidget);
+    expect(find.text('«Бал тил»'), findsOneWidget);
+    expect(find.text('«Алиппе»'), findsOneWidget);
+    expect(find.text('Акыркы ойнолгон оюн'), findsOneWidget);
     expect(find.byIcon(Icons.sports_esports_rounded), findsOneWidget);
   });
 
@@ -199,6 +208,8 @@ void main() {
     SharedPreferences.setMockInitialValues({'has_shown_game_selector': true});
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
+    await tester.tap(find.text('«Бал тил»'));
+    await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
@@ -338,11 +349,395 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final gestureDetectors = find.byType(GestureDetector);
-    expect(gestureDetectors, findsWidgets);
+    // Find cards by key
+    final firstCardFinder = find.byWidgetPredicate(
+      (w) => w.key is ValueKey && (w.key as ValueKey).value.toString().startsWith('card_1_'),
+    );
+    expect(firstCardFinder, findsWidgets);
 
-    await tester.tap(gestureDetectors.first);
+    // Initially, all cards are face down
+    expect(find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == AlippeData.cardFront), findsNothing);
+
+    // Tap the first card
+    await tester.tap(firstCardFinder.first);
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
+
+    // Card flipped face up -> cardFront is visible!
+    expect(find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == AlippeData.cardFront), findsOneWidget);
+  });
+
+  testWidgets('Section10View matched cards stay visible face-up and do not disappear', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => AlippeCubit()),
+        ],
+        child: const MaterialApp(
+          home: Section10View(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Find the pair of cards with pairId 0: card_1_0_X
+    final pair0Cards = find.byWidgetPredicate(
+      (w) => w.key is ValueKey && (w.key as ValueKey).value.toString().startsWith('card_1_0_'),
+    );
+    expect(pair0Cards, findsNWidgets(2));
+
+    // Tap first card of pair 0
+    await tester.tap(pair0Cards.at(0));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    // Tap second card of pair 0 (match!)
+    await tester.tap(pair0Cards.at(1));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    // Both cards matched, but they DO NOT disappear! Both cardFronts are visible face-up
+    expect(
+      find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == AlippeData.cardFront),
+      findsNWidgets(2),
+    );
+  });
+
+  testWidgets('GameSelectScreen highlights last played game when set to alippe', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'last_played_game': 'alippe'});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GameSelectScreen), findsOneWidget);
+    expect(find.text('Акыркы ойнолгон оюн'), findsOneWidget);
+    expect(find.text('«Алиппе»'), findsOneWidget);
+    expect(find.text('«Бал тил»'), findsOneWidget);
+  });
+
+  testWidgets('HomeScreen back button returns to GameSelectScreen', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'last_played_game': 'bal_til'});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    // Select Bal Til
+    await tester.tap(find.text('«Бал тил»'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    // Tap back button
+    final backBtn = find.byTooltip('Оюн тандоого кайтуу');
+    expect(backBtn, findsOneWidget);
+    await tester.tap(backBtn);
+    await tester.pumpAndSettle();
+
+    // Returned to GameSelectScreen
+    expect(find.byType(GameSelectScreen), findsOneWidget);
+  });
+
+  testWidgets('GameSelectScreen effect toggle enables/disables sound effects correctly', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'sound_enabled': true});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    final effectChip = find.text('Эффект');
+    expect(effectChip, findsOneWidget);
+
+    // Initial state: sound is enabled
+    expect(AudioController.instance.isSoundEnabled, true);
+
+    // Tap to disable: sound becomes false
+    await tester.tap(effectChip);
+    await tester.pumpAndSettle();
+    expect(AudioController.instance.isSoundEnabled, false);
+
+    // Tap to enable: sound becomes true
+    await tester.tap(effectChip);
+    await tester.pumpAndSettle();
+    expect(AudioController.instance.isSoundEnabled, true);
+  });
+
+  testWidgets('AlippeAnimButton scales up on tap and settles back to 1.0', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: AlippeAnimButton(
+              scaleFactor: 1.5,
+              child: Text('Test Button'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final scaleFinder = find.descendant(
+      of: find.byType(AlippeAnimButton),
+      matching: find.byType(ScaleTransition),
+    );
+    expect(scaleFinder, findsOneWidget);
+
+    ScaleTransition scaleWidget = tester.widget<ScaleTransition>(scaleFinder);
+    expect(scaleWidget.scale.value, 1.0);
+
+    // Tap to trigger animation
+    await tester.tap(find.text('Test Button'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 70));
+    scaleWidget = tester.widget<ScaleTransition>(scaleFinder);
+    expect(scaleWidget.scale.value, greaterThan(1.1));
+
+    await tester.pumpAndSettle();
+    scaleWidget = tester.widget<ScaleTransition>(scaleFinder);
+    expect(scaleWidget.scale.value, 1.0);
+  });
+
+  testWidgets('SectionBooksView Section 5 correctly maps arrows, rock, pillow and measures sounds', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SectionBooksView(sectionId: 5),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Page 0: items 1.png & 2.png (Few & Many -> Az & Kop)
+    var leftBtn = find.byKey(const ValueKey('sec_5_left_0_true'));
+    var rightBtn = find.byKey(const ValueKey('sec_5_right_1_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_az.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Аз');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kop.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көп');
+
+    // Tap next page arrow -> Page 1: items 3.png & 4.png (Left & Right -> Solgo & Ongo)
+    final nextBtn = find.byWidgetPredicate(
+      (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
+    );
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    leftBtn = find.byKey(const ValueKey('sec_5_left_2_true'));
+    rightBtn = find.byKey(const ValueKey('sec_5_right_3_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_solgo.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Солго');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_ongo.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Оңго');
+
+    // Tap next page arrow -> Page 2: items 5.png & 6.png (Down arrow & Up arrow -> Ildiy & Oido - User Image 2)
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    leftBtn = find.byKey(const ValueKey('sec_5_left_4_true'));
+    rightBtn = find.byKey(const ValueKey('sec_5_right_5_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_ildiy.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Ылдый');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_oido.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Өйдө');
+
+    // Advance to Page 8: items 17.png & 18.png (Rock & Pillow -> Katuu & Jumshak - User Image 3)
+    for (int i = 3; i <= 8; i++) {
+      await tester.tap(nextBtn);
+      await tester.pumpAndSettle();
+    }
+
+    leftBtn = find.byKey(const ValueKey('sec_5_left_16_true'));
+    rightBtn = find.byKey(const ValueKey('sec_5_right_17_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_katuu.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Катуу');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_jumshak.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Жумшак');
+  });
+
+  testWidgets('SectionBooksView Section 6 correctly maps boy body parts (arm & foot)', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SectionBooksView(sectionId: 6),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final nextBtn = find.byWidgetPredicate(
+      (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
+    );
+
+    // Page 0: left is boy (0.png), right is palm/hand (1.png) -> sound kol
+    var rightBtn = find.byKey(const ValueKey('sec_6_right_1_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kol.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Кол');
+
+    // Page 1: right is arm with sleeve (2.png - User Image 4) -> sound kol
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    rightBtn = find.byKey(const ValueKey('sec_6_right_2_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kol.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Кол');
+
+    // Page 2: right is head (3.png) -> sound bash
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    rightBtn = find.byKey(const ValueKey('sec_6_right_3_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_bash.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Баш');
+
+    // Page 3: right is foot (4.png - User Image 1) -> sound but
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    rightBtn = find.byKey(const ValueKey('sec_6_right_4_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_but.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Бут');
+  });
+
+  testWidgets('Section8View renders with Sidebar and 3 silhouette placeholders with bg frame', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Section8View(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify DragTargets and Draggables
+    expect(find.byType(DragTarget<int>), findsNWidgets(3));
+    expect(find.byType(Draggable<int>), findsNWidgets(3));
+
+    // Verify Restart button and Back button in Sidebar
+    final restartBtn = find.byWidgetPredicate(
+      (w) => w is AlippeAnimButton && w.imageAsset?.contains('restart') == true,
+    );
+    final backBtn = find.byWidgetPredicate(
+      (w) => w is AlippeAnimButton && w.imageAsset?.contains('back') == true,
+    );
+    expect(restartBtn, findsOneWidget);
+    expect(backBtn, findsOneWidget);
+  });
+
+  testWidgets('Section9View renders balloons on left and character with overlay on right', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Section9View(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify target drag target for character
+    expect(find.byType(DragTarget<Map<String, int>>), findsOneWidget);
+    // Verify 6 draggable balloons on the left page
+    expect(find.byType(Draggable<Map<String, int>>), findsNWidgets(6));
+    // Verify balloon images are present inside draggables
+    final balloonImages = find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('colors_btn'));
+    expect(balloonImages, findsAtLeastNWidgets(6));
+  });
+
+  testWidgets('Section1View renders pic_bg and preserves multiple duplicate letters on placement', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Section1View(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify pic_bg image exists
+    expect(find.byWidgetPredicate((w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('pic_bg')), findsOneWidget);
+
+    // Advance to word index 7: "nan" ('Н', 'А', 'Н') which has two identical 'N' letters
+    final nextBtn = find.byWidgetPredicate(
+      (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
+    );
+
+    for (int i = 0; i < 7; i++) {
+      await tester.tap(nextBtn);
+      await tester.pumpAndSettle();
+    }
+
+    // "nan" has 3 letters: two 'N's and one 'A'
+    expect(find.byWidgetPredicate((w) => w is Draggable), findsNWidgets(3));
+
+    // Place the first available 'N' by tapping it
+    final nButton = find.byWidgetPredicate(
+      (w) => w is AlippeAnimButton && w.imageAsset?.contains('letters/n/item.png') == true,
+    ).first;
+    await tester.tap(nButton);
+    await tester.pumpAndSettle();
+
+    // The other 'N' and 'A' must still remain available! (Total 2 draggables left, not 1)
+    expect(find.byWidgetPredicate((w) => w is Draggable), findsNWidgets(2));
+    expect(find.byWidgetPredicate(
+      (w) => w is AlippeAnimButton && w.imageAsset?.contains('letters/n/item.png') == true,
+    ), findsOneWidget);
   });
 }
 

@@ -113,7 +113,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Text(
-                'Бал тил 2.0 (Алиппе)',
+                'Бал тил',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
               ),
@@ -197,8 +197,8 @@ class _SettingRow extends StatelessWidget {
             value: value,
             activeThumbColor: AppTheme.primaryAmber,
             onChanged: (v) {
-              AudioController.instance.playButtonClick();
               onChanged(v);
+              AudioController.instance.playButtonClick();
             },
           ),
         ],

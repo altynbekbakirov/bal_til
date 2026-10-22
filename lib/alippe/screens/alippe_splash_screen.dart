@@ -28,15 +28,12 @@ class _AlippeSplashScreenState extends State<AlippeSplashScreen> {
   Future<void> _cancelAndExit() async {
     _cancelled = true;
     AlippeAudio().isAlippeActive = false;
-    AudioController.instance.isBalTilActive = true;
+    AudioController.instance.isBalTilActive = false;
     await AlippeAudio().stopAll();
-    await AppOrientation.setPortrait();
+    AppOrientation.setPortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(Routers.home, (route) => false);
-      if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
-        AudioController.instance.playMenuMusic();
-      }
+      Navigator.of(context).pushNamedAndRemoveUntil(Routers.gameSelect, (route) => false);
     }
   }
 

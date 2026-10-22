@@ -59,11 +59,11 @@ class AudioCubit extends Cubit<AudioState> {
 
   Future<void> toggleSound() async {
     final newValue = !state.isSoundEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('sound_enabled', newValue);
-
     _controller.toggleSound(newValue);
     AlippeAudio().setSoundEnabled(newValue);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('sound_enabled', newValue);
 
     emit(state.copyWith(isSoundEnabled: newValue));
   }

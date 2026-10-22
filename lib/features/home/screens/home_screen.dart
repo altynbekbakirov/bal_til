@@ -30,46 +30,64 @@ class _HomeScreenState extends State<HomeScreen> {
     AppOrientation.setPortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<AudioCubit>().loadPreferences();
-      if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
-        AudioController.instance.playMenuMusic();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_played_game', 'bal_til');
+      if (mounted) {
+        await context.read<AudioCubit>().loadPreferences();
+        if (AudioController.instance.isMusicEnabled && AudioController.instance.isBalTilActive) {
+          AudioController.instance.playMenuMusic();
+        }
       }
-      _checkFirstLaunch();
     });
   }
 
-  Future<void> _checkFirstLaunch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasShown = prefs.getBool('has_shown_game_selector') ?? false;
-    if (!hasShown && mounted) {
-      await prefs.setBool('has_shown_game_selector', true);
-      if (mounted) {
-        GameSelectionModal.show(context);
+  void _exitToGameSelect() {
+    AudioController.instance.isBalTilActive = false;
+    if (mounted) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(Routers.gameSelect, (route) => false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryAmber.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _exitToGameSelect();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 20, 12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_rounded, size: 26, color: Color(0xFF0F172A)),
+                        tooltip: 'Оюн тандоого кайтуу',
+                        onPressed: () {
+                          AudioController.instance.playButtonClick();
+                          _exitToGameSelect();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryAmber.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             child: const Icon(
                               Icons.auto_stories_rounded,
                               color: AppTheme.primaryDarkAmber,
@@ -437,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

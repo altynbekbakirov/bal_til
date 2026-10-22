@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_audio.dart';
@@ -15,12 +16,24 @@ class Section1View extends StatefulWidget {
   State<Section1View> createState() => _Section1ViewState();
 }
 
+class _DraggableLetterEntry {
+  final int id; // Unique instance ID so multiple identical letters (e.g. 'N', 'A', 'N') are tracked independently
+  final SpellingLetter letter;
+  final double rotation;
+
+  const _DraggableLetterEntry({
+    required this.id,
+    required this.letter,
+    required this.rotation,
+  });
+}
+
 class _Section1ViewState extends State<Section1View> {
   int _wordIndex = 0;
   final List<SpellingWord> _words = AlippeData.section1Items;
 
-  late List<SpellingLetter?> _placedLetters;
-  late List<SpellingLetter> _availableLetters;
+  late List<_DraggableLetterEntry?> _placedEntries;
+  late List<_DraggableLetterEntry> _availableEntries;
 
   @override
   void initState() {
@@ -30,24 +43,63 @@ class _Section1ViewState extends State<Section1View> {
 
   void _loadWord() {
     final currentWord = _words[_wordIndex];
-    _placedLetters = List<SpellingLetter?>.filled(currentWord.letters.length, null);
-    _availableLetters = List<SpellingLetter>.from(currentWord.letters)..shuffle();
-  }
+    final random = math.Random();
+    _placedEntries = List<_DraggableLetterEntry?>.filled(currentWord.letters.length, null);
 
-  void _onLetterPlaced(int slotIndex, SpellingLetter letter) {
-    setState(() {
-      _placedLetters[slotIndex] = letter;
-      _availableLetters.remove(letter);
+    // Create unique letter entries with individual rotation
+    final entries = List.generate(currentWord.letters.length, (i) {
+      final deg = (random.nextDouble() * 40 - 20); // -20deg .. 20deg
+      return _DraggableLetterEntry(
+        id: i,
+        letter: currentWord.letters[i],
+        rotation: deg * math.pi / 180,
+      );
     });
 
-    AlippeAudio().playPickUp();
+    // Always show a scrambled (wrong) combination of letters at the bottom
+    if (entries.length > 1) {
+      final targetSpell = currentWord.letters.map((l) => l.key).join('');
+      String currentSpell(List<_DraggableLetterEntry> list) =>
+          list.map((e) => e.letter.key).join('');
+
+      int attempts = 0;
+      while (currentSpell(entries) == targetSpell && attempts < 25) {
+        entries.shuffle(random);
+        attempts++;
+      }
+
+      // If still matching the answer (e.g. palindromes like 'nan' after symmetric shuffle),
+      // forcefully swap two distinct letters so it is guaranteed scrambled.
+      if (currentSpell(entries) == targetSpell) {
+        for (int i = 0; i < entries.length - 1; i++) {
+          if (entries[i].letter.key != entries[i + 1].letter.key) {
+            final temp = entries[i];
+            entries[i] = entries[i + 1];
+            entries[i + 1] = temp;
+            break;
+          }
+        }
+      }
+    }
+
+    _availableEntries = entries;
+  }
+
+  void _onLetterPlaced(int slotIndex, _DraggableLetterEntry entry) {
+    AlippeAudio().playBell();
+
+    setState(() {
+      _placedEntries[slotIndex] = entry;
+      // Remove ONLY this specific letter instance by its unique id
+      _availableEntries.removeWhere((e) => e.id == entry.id);
+    });
 
     // Check if word is complete
-    if (!_placedLetters.contains(null)) {
+    if (!_placedEntries.contains(null)) {
       final currentWord = _words[_wordIndex];
       bool correct = true;
       for (int i = 0; i < currentWord.letters.length; i++) {
-        if (_placedLetters[i]?.key != currentWord.letters[i].key) {
+        if (_placedEntries[i]?.letter.key != currentWord.letters[i].key) {
           correct = false;
           break;
         }
@@ -55,7 +107,7 @@ class _Section1ViewState extends State<Section1View> {
 
       if (correct) {
         AlippeAudio().playGood();
-        Future.delayed(const Duration(milliseconds: 700), () {
+        Future.delayed(const Duration(milliseconds: 600), () {
           if (!mounted) return;
           if (_wordIndex < _words.length - 1) {
             setState(() {
@@ -83,33 +135,30 @@ class _Section1ViewState extends State<Section1View> {
             );
           }
         });
-      } else {
-        AlippeAudio().playFail();
-        Future.delayed(const Duration(milliseconds: 600), () {
-          if (!mounted) return;
-          setState(() {
-            _loadWord();
-          });
-        });
       }
     }
   }
 
-  void _onLetterTapped(SpellingLetter letter) {
-    // Find first empty slot
-    final emptySlot = _placedLetters.indexOf(null);
-    if (emptySlot != -1) {
-      _onLetterPlaced(emptySlot, letter);
+  void _onLetterTapped(_DraggableLetterEntry entry) {
+    final currentWord = _words[_wordIndex];
+    // Find matching empty slot for this letter
+    for (int i = 0; i < currentWord.letters.length; i++) {
+      if (_placedEntries[i] == null && currentWord.letters[i].key == entry.letter.key) {
+        _onLetterPlaced(i, entry);
+        return;
+      }
     }
+    // If no matching empty slot, play swoosh sound
+    AlippeAudio().playBackSwoosh();
   }
 
   void _onSlotTapped(int slotIndex) {
-    final letter = _placedLetters[slotIndex];
-    if (letter != null) {
+    final entry = _placedEntries[slotIndex];
+    if (entry != null) {
       AlippeAudio().playPickUp2();
       setState(() {
-        _placedLetters[slotIndex] = null;
-        _availableLetters.add(letter);
+        _placedEntries[slotIndex] = null;
+        _availableEntries.add(entry);
       });
     }
   }
@@ -139,14 +188,27 @@ class _Section1ViewState extends State<Section1View> {
             : null,
         child: Row(
           children: [
-            // Left Page: Word illustration image
+            // Left Page: Word illustration with pic_bg.png frame (matches React Section 1)
             Expanded(
               child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Image.asset(
-                    word.pic,
-                    fit: BoxFit.contain,
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        AlippeData.section1PicBg,
+                        fit: BoxFit.contain,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(28.0),
+                        child: Image.asset(
+                          word.pic,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -161,74 +223,110 @@ class _Section1ViewState extends State<Section1View> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    // Slots Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(word.letters.length, (slotIdx) {
-                        final placed = _placedLetters[slotIdx];
-                        return DragTarget<SpellingLetter>(
-                          onWillAcceptWithDetails: (_) => placed == null,
-                          onAcceptWithDetails: (details) =>
+                    // Slots Row with generous hit-test area and hover animation
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(word.letters.length, (slotIdx) {
+                          final placed = _placedEntries[slotIdx];
+                          final slotSize = word.letters.length <= 2
+                              ? 120.0
+                              : (word.letters.length == 3 ? 112.0 : 88.0);
+                          final horizontalPad = word.letters.length <= 2
+                              ? 12.0
+                              : (word.letters.length == 3 ? 6.0 : 4.0);
+
+                          return DragTarget<_DraggableLetterEntry>(
+                            hitTestBehavior: HitTestBehavior.translucent,
+                            onWillAcceptWithDetails: (details) =>
+                                placed == null && details.data.letter.key == word.letters[slotIdx].key,
+                            onAcceptWithDetails: (details) =>
                               _onLetterPlaced(slotIdx, details.data),
-                          builder: (context, candidateData, rejectedData) {
-                            return GestureDetector(
-                              onTap: () => _onSlotTapped(slotIdx),
-                              child: Container(
-                                width: 85,
-                                height: 85,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                child: placed != null
-                                    ? Image.asset(placed.item, fit: BoxFit.contain)
-                                    : Image.asset(
-                                        word.letters[slotIdx].placeholder,
-                                        fit: BoxFit.contain,
-                                      ),
-                              ),
-                            );
-                          },
-                        );
-                      }),
+                            builder: (context, candidateData, rejectedData) {
+                              final isHovering = candidateData.isNotEmpty;
+
+                              return GestureDetector(
+                                onTap: () => _onSlotTapped(slotIdx),
+                                behavior: HitTestBehavior.translucent,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: horizontalPad, vertical: 16),
+                                  color: Colors.transparent,
+                                  child: AnimatedScale(
+                                    scale: isHovering ? 1.15 : 1.0,
+                                    duration: const Duration(milliseconds: 160),
+                                    curve: Curves.easeOutBack,
+                                    child: SizedBox(
+                                      width: slotSize,
+                                      height: slotSize,
+                                      child: placed != null
+                                          ? Image.asset(placed.letter.item, fit: BoxFit.contain)
+                                          : Image.asset(
+                                              word.letters[slotIdx].placeholder,
+                                              fit: BoxFit.contain,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 6),
 
-                    // Available Letters Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _availableLetters.map((letter) {
-                        return Draggable<SpellingLetter>(
-                          data: letter,
-                          feedback: Material(
-                            color: Colors.transparent,
-                            child: Image.asset(
-                              letter.item,
-                              width: 90,
-                              height: 90,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          childWhenDragging: Opacity(
-                            opacity: 0.3,
-                            child: Image.asset(
-                              letter.item,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          child: GestureDetector(
-                            onTap: () => _onLetterTapped(letter),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 10),
-                              child: AlippeAnimButton(
-                                width: 85,
-                                height: 85,
-                                imageAsset: letter.item,
+                    // Available Letters Row (always scrambled, individual instance tracking)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: _availableEntries.map((entry) {
+                          final letterSize = word.letters.length <= 2
+                              ? 106.0
+                              : (word.letters.length == 3 ? 98.0 : 85.0);
+
+                          return Transform.rotate(
+                            angle: entry.rotation,
+                            child: Draggable<_DraggableLetterEntry>(
+                              data: entry,
+                              onDragStarted: () => AlippeAudio().playPickUp(),
+                              onDraggableCanceled: (velocity, offset) =>
+                                  AlippeAudio().playBackSwoosh(),
+                              feedback: Material(
+                                color: Colors.transparent,
+                                child: Transform.scale(
+                                  scale: 1.25,
+                                  child: SizedBox(
+                                    width: 110,
+                                    height: 110,
+                                    child: Image.asset(
+                                      entry.letter.item,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              childWhenDragging: const Opacity(
+                                opacity: 0.0,
+                                child: SizedBox(width: 85, height: 85),
+                              ),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                child: AlippeAnimButton(
+                                  width: letterSize,
+                                  height: letterSize,
+                                  noTapSnd: true,
+                                  noTimeout: true,
+                                  imageAsset: entry.letter.item,
+                                  onPress: () => _onLetterTapped(entry),
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),

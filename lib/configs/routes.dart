@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/game_select/screens/game_select_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/nature/screens/animals_screen.dart';
 import '../features/nature/screens/plants_screen.dart';
@@ -13,7 +14,9 @@ import '../alippe/screens/alippe_section_screen.dart';
 import '../alippe/screens/alippe_splash_screen.dart';
 
 class Routers {
-  static const home = '/';
+  static const gameSelect = '/';
+  static const balTil = '/bal_til';
+  static const home = '/bal_til';
   static const wordConnect = '/word_connect';
   static const wordSearch = '/word_search';
   static const animals = '/animals';
@@ -24,7 +27,8 @@ class Routers {
   static const alippeHome = '/alippe_home';
 
   static Map<String, WidgetBuilder> routes = {
-    home: (context) => const HomeScreen(),
+    gameSelect: (context) => const GameSelectScreen(),
+    balTil: (context) => const HomeScreen(),
     wordConnect: (context) => const WordConnectScreen(),
     wordSearch: (context) => const WordSearchScreen(),
     animals: (context) => const AnimalsScreen(),

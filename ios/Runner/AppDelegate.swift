@@ -7,6 +7,7 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    FlutterViewController.enableDynamicOrientations()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -18,9 +19,23 @@ import UIKit
     _ application: UIApplication,
     supportedInterfaceOrientationsFor window: UIWindow?
   ) -> UIInterfaceOrientationMask {
-    if UIDevice.current.userInterfaceIdiom == .pad {
-      return .all
+    return [.portrait, .landscapeLeft, .landscapeRight]
+  }
+}
+
+extension FlutterViewController {
+  static func enableDynamicOrientations() {
+    let originalSelector = #selector(getter: UIViewController.supportedInterfaceOrientations)
+    let swizzledSelector = #selector(customSupportedInterfaceOrientations)
+
+    guard let originalMethod = class_getInstanceMethod(FlutterViewController.self, originalSelector),
+          let swizzledMethod = class_getInstanceMethod(FlutterViewController.self, swizzledSelector) else {
+      return
     }
+    method_exchangeImplementations(originalMethod, swizzledMethod)
+  }
+
+  @objc func customSupportedInterfaceOrientations() -> UIInterfaceOrientationMask {
     return [.portrait, .landscapeLeft, .landscapeRight]
   }
 }
