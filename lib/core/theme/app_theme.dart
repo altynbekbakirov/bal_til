@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -29,6 +29,36 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 6,
+        titleTextStyle: GoogleFonts.comfortaa(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1E293B),
+        ),
+        contentTextStyle: GoogleFonts.comfortaa(
+          fontSize: 14,
+          color: const Color(0xFF475569),
+          height: 1.45,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: const Color(0xFFEA580C),
+          textStyle: GoogleFonts.comfortaa(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
     );
   }

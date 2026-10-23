@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     AudioController.instance.isBalTilActive = true;
     AlippeAudio().isAlippeActive = false;
-    AppOrientation.setPortrait();
+    AppOrientation.forcePortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final prefs = await SharedPreferences.getInstance();

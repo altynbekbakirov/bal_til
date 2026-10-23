@@ -1,13 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:upgrader/upgrader.dart';
 import '../../../alippe/core/alippe_audio.dart';
-import '../../../alippe/core/alippe_cubit.dart';
 import '../../../configs/routes.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
+import '../../../core/services/common_services.dart';
+import '../../../core/services/upgrader_messages_ky.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_orientation.dart';
 import '../../home/widgets/settings_dialog.dart';
@@ -21,18 +24,57 @@ class GameSelectScreen extends StatefulWidget {
 
 class _GameSelectScreenState extends State<GameSelectScreen> with RouteAware {
   String? _lastPlayedGame; // 'bal_til' or 'alippe'
+  DateTime? _timeBackPressed;
+  Upgrader? _upgrader;
+
+  static Upgrader? _sharedUpgrader;
+  static bool _alertDismissed = false;
 
   @override
   void initState() {
     super.initState();
     _resetOrientationAndAudio();
     _loadPreferences();
+    _initUpgrader();
+  }
+
+  @override
+  void dispose() {
+    ExitNotificationOverlay.hide();
+    super.dispose();
+  }
+
+  Future<void> _initUpgrader() async {
+    // Reuse existing instance if already initialized this session
+    if (_sharedUpgrader != null) {
+      if (mounted) setState(() => _upgrader = _sharedUpgrader);
+      return;
+    }
+
+    final upgrader = Upgrader(
+      storeController: UpgraderStoreController(
+        onAndroid: () => UpgraderPlayStore(),
+        oniOS: () => UpgraderAppStore(),
+      ),
+      messages: UpgraderMessagesKy(),
+      durationUntilAlertAgain: kDebugMode
+          ? Duration.zero
+          : const Duration(days: 1),
+      debugLogging: kDebugMode,
+    );
+    if (kDebugMode) {
+      await Upgrader.clearSavedSettings();
+    }
+    _sharedUpgrader = upgrader;
+    if (mounted) {
+      setState(() => _upgrader = upgrader);
+    }
   }
 
   Future<void> _resetOrientationAndAudio() async {
     AudioController.instance.isBalTilActive = false;
     AlippeAudio().isAlippeActive = false;
-    await AppOrientation.setPortrait();
+    await AppOrientation.forcePortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
@@ -88,32 +130,35 @@ class _GameSelectScreenState extends State<GameSelectScreen> with RouteAware {
     AudioController.instance.stopAll();
     AlippeAudio().stopAll();
 
-    AppOrientation.setLandscape();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
-    final cubit = context.read<AlippeCubit>();
-    await cubit.init();
-    await AlippeAudio().init();
-    if (AlippeAudio().isMusicEnabled) {
-      await AlippeAudio().startMusic();
-    }
+    // Do NOT rotate orientation here! GameSelectScreen stays strictly in portrait.
+    // AlippeHomeScreen manages its own landscape mode upon opening.
 
     if (!mounted) return;
     await Navigator.of(context).pushNamed(Routers.alippeHome);
 
     // When returning from Alippe
     if (mounted) {
-      _resetOrientationAndAudio();
+      await _resetOrientationAndAudio();
       _loadPreferences();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: CustomScrollView(
+    final body = PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        final res = await handlePopInvoked(context, didPop, _timeBackPressed);
+        if (res != null && mounted) {
+          setState(() {
+            _timeBackPressed = res;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: SafeArea(
+          child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             // Top App Bar / Header
@@ -405,6 +450,26 @@ class _GameSelectScreenState extends State<GameSelectScreen> with RouteAware {
           ],
         ),
       ),
+    ),
+    );
+
+    // Show UpgradeAlert only if upgrader is ready and user hasn't dismissed it this session
+    if (_upgrader == null || _alertDismissed) return body;
+    return UpgradeAlert(
+      upgrader: _upgrader!,
+      onLater: () {
+        setState(() => _alertDismissed = true);
+        return true;
+      },
+      onIgnore: () {
+        setState(() => _alertDismissed = true);
+        return true;
+      },
+      onUpdate: () {
+        setState(() => _alertDismissed = true);
+        return true;
+      },
+      child: body,
     );
   }
 

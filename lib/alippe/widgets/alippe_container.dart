@@ -21,7 +21,7 @@ class _AlippeContainerState extends State<AlippeContainer> {
   @override
   void initState() {
     super.initState();
-    AppOrientation.setLandscape();
+    AppOrientation.forceLandscape();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 

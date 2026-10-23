@@ -13,8 +13,38 @@ import '../widgets/alippe_container.dart';
 import '../widgets/alippe_sidebar.dart';
 import 'dialogs/alippe_settings_dialog.dart';
 
-class AlippeHomeScreen extends StatelessWidget {
+class AlippeHomeScreen extends StatefulWidget {
   const AlippeHomeScreen({super.key});
+
+  @override
+  State<AlippeHomeScreen> createState() => _AlippeHomeScreenState();
+}
+
+class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Only Alippe should be in landscape; engage landscape & immersive mode on entry
+    AppOrientation.forceLandscape();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // Initialize Cubit & Audio when entering Alippe
+    final cubit = context.read<AlippeCubit>();
+    cubit.init();
+    AlippeAudio().init().then((_) {
+      if (AlippeAudio().isMusicEnabled && mounted) {
+        AlippeAudio().startMusic();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // When leaving Alippe, restore portrait mode and standard UI overlay
+    AppOrientation.forcePortrait();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
 
   String _getStarAsset(int score) {
     switch (score) {
@@ -41,8 +71,8 @@ class AlippeHomeScreen extends StatelessWidget {
     AlippeAudio().isAlippeActive = false;
     AudioController.instance.isBalTilActive = false;
     await AlippeAudio().stopAll();
-    AppOrientation.setPortrait();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await AppOrientation.forcePortrait();
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (context.mounted) {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
@@ -54,7 +84,6 @@ class AlippeHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    AlippeAudio().init();
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {

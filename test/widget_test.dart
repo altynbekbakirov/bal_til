@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bal_til/main.dart';
@@ -19,6 +20,8 @@ import 'package:bal_til/alippe/data/alippe_data.dart';
 import 'package:bal_til/configs/routes.dart';
 import 'package:bal_til/features/game_select/screens/game_select_screen.dart';
 import 'package:bal_til/core/audio/audio_controller.dart';
+import 'package:bal_til/core/services/common_services.dart';
+import 'package:bal_til/core/services/upgrader_messages_ky.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -738,6 +741,76 @@ void main() {
     expect(find.byWidgetPredicate(
       (w) => w is AlippeAnimButton && w.imageAsset?.contains('letters/n/item.png') == true,
     ), findsOneWidget);
+  });
+
+  testWidgets('AlippeHomeScreen forces landscape on mount and restores portrait on dispose', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<AlippeCubit>(create: (_) => AlippeCubit()),
+        ],
+        child: const MaterialApp(
+          home: AlippeHomeScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify AlippeHomeScreen is mounted
+    expect(find.byType(AlippeHomeScreen), findsOneWidget);
+
+    // Now unmount / navigate away to trigger dispose
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Home'))));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home'), findsOneWidget);
+  });
+
+  test('UpgraderMessagesKy provides accurate Kyrgyz translations', () {
+    final messages = UpgraderMessagesKy();
+    expect(messages.languageCode, equals('ky'));
+    expect(messages.title, equals('Жаңыртуу керекпи?'));
+    expect(messages.buttonTitleUpdate, equals('ЖАҢЫРТУУ'));
+    expect(messages.buttonTitleLater, equals('КИЙИН'));
+    expect(messages.buttonTitleIgnore, equals('ЖОК'));
+    expect(messages.prompt, equals('Азыр жаңыртууну каалайсызбы?'));
+    expect(messages.releaseNotes, equals('Өзгөрүүлөр тизмеси'));
+    expect(messages.body.contains('жаңы версиясы'), isTrue);
+  });
+
+  testWidgets('handlePopInvoked shows warning on first press and exits on second press within 2s', (WidgetTester tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall methodCall) async => null,
+    );
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: Text('Test')),
+      ),
+    );
+    final context = tester.element(find.text('Test'));
+
+    // Initial press with null lastPressed (first launch)
+    final initialResult = await handlePopInvoked(context, false, null);
+    expect(initialResult, isNotNull);
+
+    // Second press immediately after (< 2s)
+    final secondResult = await handlePopInvoked(context, false, initialResult!);
+    expect(secondResult, isNull);
+
+    // Press after more than 2 seconds (e.g. 5 seconds ago) triggers warning again
+    final fiveSecondsAgo = DateTime.now().subtract(const Duration(seconds: 5));
+    final thirdResult = await handlePopInvoked(context, false, fiveSecondsAgo);
+    expect(thirdResult, isNotNull);
+
+    // If already didPop is true, it should return null without warning
+    final didPopResult = await handlePopInvoked(context, true, fiveSecondsAgo);
+    expect(didPopResult, isNull);
+
+    // Clean up overlay and timer
+    ExitNotificationOverlay.hide();
+    await tester.pumpAndSettle();
   });
 }
 

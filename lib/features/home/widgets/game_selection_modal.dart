@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../alippe/core/alippe_audio.dart';
-import '../../../alippe/core/alippe_cubit.dart';
 import '../../../core/audio/audio_controller.dart';
 import '../../../core/audio/audio_cubit.dart';
 import '../../../core/theme/app_theme.dart';
@@ -35,20 +34,22 @@ class GameSelectionModal extends StatelessWidget {
     await AudioController.instance.stopAll();
     await AlippeAudio().stopAll();
 
-    // 2. Lock to landscape for Alippe
-    AppOrientation.setLandscape();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Do NOT rotate orientation here! HomeScreen must remain strictly in portrait.
+    // AlippeHomeScreen manages its own landscape mode upon opening.
 
     if (!context.mounted) return;
-    final cubit = context.read<AlippeCubit>();
-    await cubit.init();
-    await AlippeAudio().init();
-    if (AlippeAudio().isMusicEnabled) {
-      await AlippeAudio().startMusic();
+    await Navigator.of(context).pushNamed(Routers.alippeHome);
+
+    // When returning to HomeScreen
+    if (context.mounted) {
+      await AppOrientation.forcePortrait();
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      AudioController.instance.isBalTilActive = true;
+      AlippeAudio().isAlippeActive = false;
+      if (AudioController.instance.isMusicEnabled) {
+        AudioController.instance.playMenuMusic();
+      }
     }
-
-    if (!context.mounted) return;
-    Navigator.of(context).pushNamed(Routers.alippeHome);
   }
 
   @override
