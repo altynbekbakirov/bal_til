@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_audio.dart';
@@ -40,8 +41,14 @@ class _Section8ViewState extends State<Section8View> {
 
     // Placeholders are randomly ordered among the 3
     _currentPlaceholders = List<int>.from(itemIndices)..shuffle();
-    // Draggable items are also randomly ordered
-    _currentItems = List<int>.from(itemIndices)..shuffle();
+
+    // Answers are ALWAYS shown in wrong order (no item aligns with its placeholder column)
+    // For 3 items, shift by 1 or 2 to produce a complete derangement
+    final shift = math.Random().nextBool() ? 1 : 2;
+    _currentItems = List.generate(
+      _itemsPerRound,
+      (i) => _currentPlaceholders[(i + shift) % _itemsPerRound],
+    );
 
     _matched = List.filled(_itemsPerRound, false);
     _availableItemIds = Set<int>.from(itemIndices);
@@ -88,6 +95,24 @@ class _Section8ViewState extends State<Section8View> {
           );
         }
       });
+    }
+  }
+
+  void _onItemTapped(int itemIdx) {
+    if (!_availableItemIds.contains(itemIdx)) return;
+    for (int i = 0; i < _itemsPerRound; i++) {
+      if (!_matched[i] && _currentPlaceholders[i] == itemIdx) {
+        _onMatched(i, itemIdx);
+        return;
+      }
+    }
+  }
+
+  void _onSlotTapped(int slotIdx) {
+    if (_matched[slotIdx]) return;
+    final itemIdx = _currentPlaceholders[slotIdx];
+    if (_availableItemIds.contains(itemIdx)) {
+      _onMatched(slotIdx, itemIdx);
     }
   }
 
@@ -147,43 +172,78 @@ class _Section8ViewState extends State<Section8View> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             child: DragTarget<int>(
+                              hitTestBehavior: HitTestBehavior.opaque,
                               onWillAcceptWithDetails: (details) =>
                                   !isSlotMatched && details.data == id,
                               onAcceptWithDetails: (details) =>
                                   _onMatched(slotIdx, details.data),
                               builder: (context, candidateData, rejectedData) {
-                                return Center(
-                                  child: AspectRatio(
-                                    aspectRatio: 256 / 300,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      fit: StackFit.expand,
-                                      children: [
-                                        // Frame background
-                                        Image.asset(
-                                          AlippeData.section8Bg,
-                                          fit: BoxFit.contain,
-                                        ),
+                                final isHovering = candidateData.isNotEmpty;
+                                return GestureDetector(
+                                  onTap: () => _onSlotTapped(slotIdx),
+                                  child: Center(
+                                    child: AnimatedScale(
+                                      scale: isHovering ? 1.08 : 1.0,
+                                      duration: const Duration(milliseconds: 150),
+                                      child: AspectRatio(
+                                        aspectRatio: 256 / 300,
+                                        child: Container(
+                                          decoration: isHovering
+                                              ? BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.amber.withValues(alpha: 0.6),
+                                                      blurRadius: 16,
+                                                      spreadRadius: 4,
+                                                    ),
+                                                  ],
+                                                )
+                                              : null,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            fit: StackFit.expand,
+                                            children: [
+                                              // Frame background
+                                              Image.asset(
+                                                AlippeData.section8Bg,
+                                                fit: BoxFit.contain,
+                                              ),
 
-                                        // Silhouette image
-                                        Padding(
-                                          padding: const EdgeInsets.all(20.0),
-                                          child: Image.asset(
-                                            AlippeData.section8Placeholders[id],
-                                            fit: BoxFit.contain,
+                                              // Silhouette image
+                                              Padding(
+                                                padding: const EdgeInsets.all(20.0),
+                                                child: Image.asset(
+                                                  AlippeData.section8Placeholders[id],
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+
+                                              // Color image overlay on match with elastic pop animation
+                                              if (isSlotMatched)
+                                                TweenAnimationBuilder<double>(
+                                                  key: ValueKey('matched_${slotIdx}_$id'),
+                                                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                                                  duration: const Duration(milliseconds: 350),
+                                                  curve: Curves.elasticOut,
+                                                  builder: (context, scale, child) {
+                                                    return Transform.scale(
+                                                      scale: scale,
+                                                      child: child,
+                                                    );
+                                                  },
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(20.0),
+                                                    child: Image.asset(
+                                                      AlippeData.section8Items[id],
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
-
-                                        // Color image overlay on match
-                                        if (isSlotMatched)
-                                          Padding(
-                                            padding: const EdgeInsets.all(20.0),
-                                            child: Image.asset(
-                                              AlippeData.section8Items[id],
-                                              fit: BoxFit.contain,
-                                            ),
-                                          ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 );
@@ -215,6 +275,7 @@ class _Section8ViewState extends State<Section8View> {
                                       aspectRatio: 256 / 300,
                                       child: Draggable<int>(
                                         data: id,
+                                        dragAnchorStrategy: pointerDragAnchorStrategy,
                                         onDragStarted: () => AlippeAudio().playPickUp(),
                                         onDraggableCanceled: (velocity, offset) =>
                                             AlippeAudio().playBackSwoosh(),
@@ -240,7 +301,10 @@ class _Section8ViewState extends State<Section8View> {
                                           width: 140,
                                           height: 140,
                                           scaleFactor: 1.2,
+                                          noTapSnd: true,
+                                          noTimeout: true,
                                           imageAsset: AlippeData.section8Items[id],
+                                          onPress: () => _onItemTapped(id),
                                         ),
                                       ),
                                     ),

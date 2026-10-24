@@ -660,6 +660,36 @@ void main() {
     );
     expect(restartBtn, findsOneWidget);
     expect(backBtn, findsOneWidget);
+
+    // Verify answers are always in wrong order:
+    // None of the 3 Draggable items should have the same data as the DragTarget in the same column
+    final dragTargets = tester.widgetList<DragTarget<int>>(find.byType(DragTarget<int>)).toList();
+    final draggables = tester.widgetList<Draggable<int>>(find.byType(Draggable<int>)).toList();
+    expect(dragTargets.length, 3);
+    expect(draggables.length, 3);
+
+    for (int i = 0; i < 3; i++) {
+      // Find candidate data accepted by target i vs draggable data at index i
+      final targetAccepts = dragTargets[i].onWillAcceptWithDetails;
+      // When tested with draggable i's data, it should return false because they must not match!
+      expect(
+        targetAccepts?.call(DragTargetDetails<int>(data: draggables[i].data!, offset: Offset.zero)),
+        isFalse,
+        reason: 'Item $i must not match placeholder $i (must be in wrong order)',
+      );
+    }
+
+    // Verify tap-to-match works: tapping first draggable matches it
+    final firstDraggableItem = draggables.first.data!;
+    final itemButton = find.byWidgetPredicate(
+      (w) => w is AlippeAnimButton && w.imageAsset == AlippeData.section8Items[firstDraggableItem],
+    );
+    expect(itemButton, findsOneWidget);
+    await tester.tap(itemButton);
+    await tester.pumpAndSettle();
+
+    // After matching, only 2 Draggables remain
+    expect(find.byType(Draggable<int>), findsNWidgets(2));
   });
 
   testWidgets('Section9View renders balloons on left and character with overlay on right', (WidgetTester tester) async {
