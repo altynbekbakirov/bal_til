@@ -19,9 +19,13 @@ import 'package:bal_til/alippe/screens/sections/section10_view.dart';
 import 'package:bal_til/alippe/data/alippe_data.dart';
 import 'package:bal_til/configs/routes.dart';
 import 'package:bal_til/features/game_select/screens/game_select_screen.dart';
-import 'package:bal_til/core/audio/audio_controller.dart';
 import 'package:bal_til/core/services/common_services.dart';
 import 'package:bal_til/core/services/upgrader_messages_ky.dart';
+import 'package:bal_til/alippe/screens/dialogs/alippe_settings_dialog.dart';
+import 'package:bal_til/features/nature/screens/animals_screen.dart';
+import 'package:bal_til/features/nature/screens/plants_screen.dart';
+import 'package:bal_til/features/nature/screens/nature_spelling_screen.dart';
+import 'package:bal_til/core/utils/app_orientation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +36,7 @@ void main() {
     expect(find.byType(AlippeApp), findsOneWidget);
   });
 
-  testWidgets('MapScreen renders without ParentDataWidget assertion', (WidgetTester tester) async {
+  testWidgets('MapScreen renders in landscape and restores portrait on exit', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: MapScreen()));
     await tester.pumpAndSettle();
 
@@ -40,6 +44,13 @@ void main() {
     expect(find.text('Бишкек'), findsOneWidget);
     expect(find.text('Ысык-Көл'), findsOneWidget);
     expect(find.text('Нарын'), findsOneWidget);
+    expect(AppOrientation.isLandscape, isTrue);
+
+    // Unmount / navigate away to trigger dispose and verify portrait restoration
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Home'))));
+    await tester.pumpAndSettle();
+
+    expect(AppOrientation.isLandscape, isFalse);
   });
 
   testWidgets('MyApp smoke test with GameSelectScreen and Game Selector', (WidgetTester tester) async {
@@ -47,23 +58,37 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Оюн тандаңыз'), findsOneWidget);
-    expect(find.text('«Бал тил»'), findsOneWidget);
-    expect(find.text('«Алиппе»'), findsOneWidget);
+    expect(find.text('Бал тил'), findsWidgets);
+    expect(find.text('Бал тил 1'), findsOneWidget);
+    expect(find.text('Бал тил 2'), findsOneWidget);
+    expect(find.text('3 – 6 жаш'), findsOneWidget);
+    expect(find.text('7 – 10 жаш'), findsOneWidget);
     expect(find.text('Акыркы ойнолгон оюн'), findsOneWidget);
-    expect(find.byIcon(Icons.sports_esports_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
   });
 
   testWidgets('AlippeSettingsDialog renders Sliders without Material error', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(800, 380);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: AlippeApp(),
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: AlippeSettingsDialog(),
+          ),
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // Verify sliders and buttons rendered without overflow
+    expect(find.byType(Slider), findsNWidgets(2));
+    expect(find.text('Упайларды тазалоо'), findsOneWidget);
+    expect(find.text('Маалымат'), findsOneWidget);
   });
 
   testWidgets('AlippeZoomItem triggers zoom and speech on click', (WidgetTester tester) async {
@@ -211,9 +236,35 @@ void main() {
     SharedPreferences.setMockInitialValues({'has_shown_game_selector': true});
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('«Бал тил»'));
+    await tester.tap(find.text('Бал тил 2'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
+
+    // Verify first game icons on HomeScreen
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/alippe/images/books/book1/icon.png',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/alippe/images/side/back.png',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/alippe/images/side/settings.png',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/alippe/images/books/stars/one.png',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('GameSelectionModal allows selecting game on card tap', (WidgetTester tester) async {
@@ -228,18 +279,17 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Оюн тандаңыз'), findsOneWidget);
-    expect(find.text('«Бал тил»'), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
+    expect(find.text('Бал тил 2'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('«Бал тил»'));
+    await tester.ensureVisible(find.text('Бал тил 2'));
     await tester.pumpAndSettle();
 
-    // Tap directly on the Bal Til card text (not the button)
-    await tester.tap(find.text('«Бал тил»'));
+    // Tap directly on the Bal Til 2 card text (not the button)
+    await tester.tap(find.text('Бал тил 2'));
     await tester.pumpAndSettle();
 
-    // Modal dismissed
-    expect(find.text('Оюн тандаңыз'), findsNothing);
+    // Navigated to HomeScreen
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
@@ -422,8 +472,8 @@ void main() {
 
     expect(find.byType(GameSelectScreen), findsOneWidget);
     expect(find.text('Акыркы ойнолгон оюн'), findsOneWidget);
-    expect(find.text('«Алиппе»'), findsOneWidget);
-    expect(find.text('«Бал тил»'), findsOneWidget);
+    expect(find.text('Бал тил 1'), findsOneWidget);
+    expect(find.text('Бал тил 2'), findsOneWidget);
   });
 
   testWidgets('HomeScreen back button returns to GameSelectScreen', (WidgetTester tester) async {
@@ -431,8 +481,8 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    // Select Bal Til
-    await tester.tap(find.text('«Бал тил»'));
+    // Select Bal Til 2
+    await tester.tap(find.text('Бал тил 2'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
 
@@ -446,26 +496,13 @@ void main() {
     expect(find.byType(GameSelectScreen), findsOneWidget);
   });
 
-  testWidgets('GameSelectScreen effect toggle enables/disables sound effects correctly', (WidgetTester tester) async {
+  testWidgets('GameSelectScreen does not show sound and effect settings card', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({'sound_enabled': true});
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    final effectChip = find.text('Эффект');
-    expect(effectChip, findsOneWidget);
-
-    // Initial state: sound is enabled
-    expect(AudioController.instance.isSoundEnabled, true);
-
-    // Tap to disable: sound becomes false
-    await tester.tap(effectChip);
-    await tester.pumpAndSettle();
-    expect(AudioController.instance.isSoundEnabled, false);
-
-    // Tap to enable: sound becomes true
-    await tester.tap(effectChip);
-    await tester.pumpAndSettle();
-    expect(AudioController.instance.isSoundEnabled, true);
+    expect(find.text('Үн & Музыка:'), findsNothing);
+    expect(find.text('Эффект'), findsNothing);
   });
 
   testWidgets('AlippeAnimButton scales up on tap and settles back to 1.0', (WidgetTester tester) async {
@@ -524,15 +561,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Page 0: items 1.png & 2.png (Few & Many -> Az & Kop)
+    // Page 0: items 1.png & 2.png (Left & Right -> Solgo & Ongo)
     var leftBtn = find.byKey(const ValueKey('sec_5_left_0_true'));
     var rightBtn = find.byKey(const ValueKey('sec_5_right_1_true'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_az.mp3'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Аз');
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kop.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көп');
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_solgo.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Солго');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_ongo.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Оңго');
 
-    // Tap next page arrow -> Page 1: items 3.png & 4.png (Left & Right -> Solgo & Ongo)
+    // Tap next page arrow -> Page 1: items 3.png & 4.png (Down arrow & Up arrow -> Ildiy & Oido)
     final nextBtn = find.byWidgetPredicate(
       (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
     );
@@ -541,23 +578,23 @@ void main() {
 
     leftBtn = find.byKey(const ValueKey('sec_5_left_2_true'));
     rightBtn = find.byKey(const ValueKey('sec_5_right_3_true'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_solgo.mp3'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Солго');
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_ongo.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Оңго');
-
-    // Tap next page arrow -> Page 2: items 5.png & 6.png (Down arrow & Up arrow -> Ildiy & Oido - User Image 2)
-    await tester.tap(nextBtn);
-    await tester.pumpAndSettle();
-
-    leftBtn = find.byKey(const ValueKey('sec_5_left_4_true'));
-    rightBtn = find.byKey(const ValueKey('sec_5_right_5_true'));
     expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_ildiy.mp3'));
     expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Ылдый');
     expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_oido.mp3'));
     expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Өйдө');
 
-    // Advance to Page 8: items 17.png & 18.png (Rock & Pillow -> Katuu & Jumshak - User Image 3)
+    // Tap next page arrow -> Page 2: items 5.png & 6.png (Pillow & Rock -> Jumshak & Katuu)
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    leftBtn = find.byKey(const ValueKey('sec_5_left_4_true'));
+    rightBtn = find.byKey(const ValueKey('sec_5_right_5_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_jumshak.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Жумшак');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_katuu.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Катуу');
+
+    // Advance to Page 8: items 17.png & 18.png (Few & Many -> Az & Kop)
     for (int i = 3; i <= 8; i++) {
       await tester.tap(nextBtn);
       await tester.pumpAndSettle();
@@ -565,13 +602,13 @@ void main() {
 
     leftBtn = find.byKey(const ValueKey('sec_5_left_16_true'));
     rightBtn = find.byKey(const ValueKey('sec_5_right_17_true'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_katuu.mp3'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Катуу');
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_jumshak.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Жумшак');
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_az.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).spokenText, 'Аз');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kop.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көп');
   });
 
-  testWidgets('SectionBooksView Section 6 correctly maps boy body parts (arm & foot)', (WidgetTester tester) async {
+  testWidgets('SectionBooksView Section 6 correctly maps body parts (3 parts)', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 360);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -596,18 +633,22 @@ void main() {
       (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
     );
 
-    // Page 0: left is boy (0.png), right is palm/hand (1.png) -> sound kol
+    // Left is boy body (0.png)
+    final leftBtn = find.byKey(const ValueKey('sec_6_left_0_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).imageAsset, contains('book4/section1/items/0.png'));
+
+    // Page 0: right is palm/hand (1.png) -> sound kol
     var rightBtn = find.byKey(const ValueKey('sec_6_right_1_true'));
     expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kol.mp3'));
     expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Кол');
 
-    // Page 1: right is arm with sleeve (2.png - User Image 4) -> sound kol
+    // Page 1: right is foot (2.png) -> sound but
     await tester.tap(nextBtn);
     await tester.pumpAndSettle();
 
     rightBtn = find.byKey(const ValueKey('sec_6_right_2_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kol.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Кол');
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_but.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Бут');
 
     // Page 2: right is head (3.png) -> sound bash
     await tester.tap(nextBtn);
@@ -616,14 +657,72 @@ void main() {
     rightBtn = find.byKey(const ValueKey('sec_6_right_3_true'));
     expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_bash.mp3'));
     expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Баш');
+  });
 
-    // Page 3: right is foot (4.png - User Image 1) -> sound but
-    await tester.tap(nextBtn);
+  testWidgets('SectionBooksView Section 7 correctly maps face parts (8 parts)', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => AlippeCubit(),
+        child: const MaterialApp(
+          home: Scaffold(
+            body: SectionBooksView(sectionId: 7),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    rightBtn = find.byKey(const ValueKey('sec_6_right_4_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_but.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Бут');
+    final nextBtn = find.byWidgetPredicate(
+      (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
+    );
+
+    // Left is boy face (0.png)
+    final leftBtn = find.byKey(const ValueKey('sec_7_left_0_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).imageAsset, contains('book4/section2/items/0.png'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_bash.mp3'));
+
+    // Page 0: right is eye (1.png) -> sound koz
+    var rightBtn = find.byKey(const ValueKey('sec_7_right_1_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_koz.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көз');
+
+    // Advance through remaining pages
+    final expectedSounds = [
+      'boy_koz.mp3',
+      'boy_murun.mp3',
+      'boy_ooz.mp3',
+      'boy_kulak.mp3',
+      'boy_chach.mp3',
+      'boy_til.mp3',
+      'boy_kash.mp3',
+      'boy_tish.mp3',
+    ];
+    final expectedTexts = [
+      'Көз',
+      'Мурун',
+      'Ооз',
+      'Кулак',
+      'Чач',
+      'Тил',
+      'Каш',
+      'Тиш',
+    ];
+
+    for (int i = 1; i < expectedSounds.length; i++) {
+      await tester.tap(nextBtn);
+      await tester.pumpAndSettle();
+      rightBtn = find.byKey(ValueKey('sec_7_right_${i + 1}_true'));
+      expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains(expectedSounds[i]));
+      expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, expectedTexts[i]);
+    }
   });
 
   testWidgets('Section8View renders with Sidebar and 3 silhouette placeholders with bg frame', (WidgetTester tester) async {
@@ -842,5 +941,97 @@ void main() {
     ExitNotificationOverlay.hide();
     await tester.pumpAndSettle();
   });
+
+  testWidgets('GameSelectScreen info icon click opens AppInfoDialog and displays app details', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    // Verify info icon is present
+    final infoButtonFinder = find.byIcon(Icons.info_outline_rounded);
+    expect(infoButtonFinder, findsOneWidget);
+
+    // Tap info icon
+    await tester.tap(infoButtonFinder);
+    await tester.pumpAndSettle();
+
+    // Verify AppInfoDialog contents
+    expect(find.text('Бал тил'), findsWidgets);
+    expect(find.text('Интерактивдүү билим берүү • v1.0.0'), findsOneWidget);
+    expect(find.text('Бал тил 1'), findsWidgets);
+    expect(find.text('Бал тил 2'), findsWidgets);
+    expect(find.text('Түшүнүктүү'), findsOneWidget);
+
+    // Tap close button and settle
+    await tester.ensureVisible(find.text('Түшүнүктүү'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Түшүнүктүү'));
+    await tester.pumpAndSettle();
+
+    // Dialog should be dismissed
+    expect(find.text('Түшүнүктүү'), findsNothing);
+  });
+
+  testWidgets('AnimalsScreen renders portrait spelling game and supports up to 3 hints', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: AnimalsScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AnimalsScreen), findsOneWidget);
+    expect(find.byType(NatureSpellingScreen), findsOneWidget);
+    expect(find.text('Жаныбарлар'), findsOneWidget);
+    expect(find.text('1 / 13'), findsOneWidget);
+    expect(find.byIcon(Icons.shuffle_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.refresh_rounded), findsWidgets);
+
+    // Verify 3 hints initially
+    final appbarHint = find.byKey(const ValueKey('hint_button_appbar'));
+    expect(appbarHint, findsOneWidget);
+    expect(find.text('3'), findsWidgets);
+
+    // Tap hint button
+    await tester.tap(appbarHint);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('2'), findsWidgets);
+
+    // Tap hint second time
+    await tester.tap(appbarHint);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('1'), findsWidgets);
+
+    // Tap hint third time
+    await tester.tap(appbarHint);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('0'), findsWidgets);
+  });
+
+  testWidgets('PlantsScreen renders portrait spelling game and handles letter tap interaction', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: PlantsScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PlantsScreen), findsOneWidget);
+    expect(find.byType(NatureSpellingScreen), findsOneWidget);
+    expect(find.text('Өсүмдүктөр'), findsOneWidget);
+    expect(find.text('1 / 9'), findsOneWidget);
+    expect(find.byIcon(Icons.shuffle_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.refresh_rounded), findsWidgets);
+  });
 }
+
 

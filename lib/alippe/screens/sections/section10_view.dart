@@ -44,23 +44,31 @@ class _CardModel {
 
 class _Section10ViewState extends State<Section10View> {
   int _level = 1; // 1: 6 cards (3 pairs), 2: 8 cards (4 pairs)
+  int _roundIndex = 0;
   late List<_CardModel> _cards;
   int? _firstSelectedIndex;
   bool _isProcessing = false;
 
+  int get _itemsPerRound => _level == 1 ? 3 : 4;
+  int get _columns => _level == 1 ? 3 : 4;
+  int get _totalRounds => AlippeData.section10Items.length ~/ _itemsPerRound;
+
   @override
   void initState() {
     super.initState();
-    _startLevel();
+    _startRound();
   }
 
-  void _startLevel() {
+  void _startRound() {
     _firstSelectedIndex = null;
     _isProcessing = false;
 
-    final numPairs = _level == 1 ? 3 : 4;
-    final allImages = List<String>.from(AlippeData.section10Items)..shuffle();
-    final chosenImages = allImages.take(numPairs).toList();
+    final allItems = AlippeData.section10Items;
+    final startIndex = _roundIndex * _itemsPerRound;
+    final chosenImages = allItems.sublist(
+      startIndex,
+      (startIndex + _itemsPerRound).clamp(0, allItems.length),
+    );
 
     final List<_CardModel> list = [];
     for (int i = 0; i < chosenImages.length; i++) {
@@ -104,33 +112,74 @@ class _Section10ViewState extends State<Section10View> {
         // Check if all matched
         if (_cards.every((c) => c.isMatched)) {
           AlippeAudio().playNext();
-          Future.delayed(const Duration(milliseconds: 700), () {
+          _isProcessing = true;
+
+          Future.delayed(const Duration(milliseconds: 600), () {
             if (!mounted) return;
-            if (_level == 1) {
-              setState(() {
-                _level = 2;
-                _startLevel();
-              });
-            } else {
-              // Level 2 complete -> Finished Section 10!
-              context.read<AlippeCubit>().addScore(5, 3);
-              AlippeGameFinishDialog.show(
-                context: context,
-                score: 3,
-                onRestart: () {
-                  setState(() {
-                    _level = 1;
-                    _startLevel();
-                  });
-                },
-                onNext: () {
-                  AlippeGameFinishDialog.navigateToAlippeHome(context);
-                },
-                onHome: () {
-                  AlippeGameFinishDialog.navigateToAlippeHome(context);
-                },
-              );
-            }
+            // Flip cards face down before transitioning
+            setState(() {
+              _cards = _cards.map((c) => c.copyWith(isFaceUp: false)).toList();
+            });
+
+            Future.delayed(const Duration(milliseconds: 400), () {
+              if (!mounted) return;
+              final isLastRound = _roundIndex >= _totalRounds - 1;
+
+              if (!isLastRound) {
+                // Next round within current level (continues with 6 cards in Level 1)
+                setState(() {
+                  _roundIndex++;
+                  _startRound();
+                });
+              } else if (_level == 1) {
+                // Level 1 complete (all 9 rounds of 6 cards passed)! Award 1 star.
+                context.read<AlippeCubit>().addScore(5, 1);
+                AlippeGameFinishDialog.show(
+                  context: context,
+                  score: 1,
+                  onRestart: () {
+                    AlippeAudio().playReset();
+                    setState(() {
+                      _level = 1;
+                      _roundIndex = 0;
+                      _startRound();
+                    });
+                  },
+                  onNext: () {
+                    // Start Level 2 (8 cards)!
+                    setState(() {
+                      _level = 2;
+                      _roundIndex = 0;
+                      _startRound();
+                    });
+                  },
+                  onHome: () {
+                    AlippeGameFinishDialog.navigateToAlippeHome(context);
+                  },
+                );
+              } else {
+                // Level 2 complete (all 7 rounds of 8 cards passed)! Award 3 stars.
+                context.read<AlippeCubit>().addScore(5, 3);
+                AlippeGameFinishDialog.show(
+                  context: context,
+                  score: 3,
+                  onRestart: () {
+                    AlippeAudio().playReset();
+                    setState(() {
+                      _level = 1;
+                      _roundIndex = 0;
+                      _startRound();
+                    });
+                  },
+                  onNext: () {
+                    AlippeGameFinishDialog.navigateToAlippeHome(context);
+                  },
+                  onHome: () {
+                    AlippeGameFinishDialog.navigateToAlippeHome(context);
+                  },
+                );
+              }
+            });
           });
         }
       } else {
@@ -151,7 +200,7 @@ class _Section10ViewState extends State<Section10View> {
 
   @override
   Widget build(BuildContext context) {
-    final columns = _level == 1 ? 3 : 4;
+    final columns = _columns;
 
     return AlippeContainer(
       child: Row(
@@ -172,7 +221,8 @@ class _Section10ViewState extends State<Section10View> {
                     AlippeAudio().playReset();
                     setState(() {
                       _level = 1;
-                      _startLevel();
+                      _roundIndex = 0;
+                      _startRound();
                     });
                   },
                 ),
@@ -240,7 +290,7 @@ class _Section10ViewState extends State<Section10View> {
     if (index >= _cards.length) return const SizedBox.shrink();
     final card = _cards[index];
     return _AlippeMemoryCardWidget(
-      key: ValueKey('card_${_level}_${card.pairId}_$index'),
+      key: ValueKey('card_${_level}_${card.pairId}_${_roundIndex}_$index'),
       isFaceUp: card.isFaceUp,
       isMatched: card.isMatched,
       image: card.image,
@@ -296,12 +346,12 @@ class _AlippeMemoryCardWidgetState extends State<_AlippeMemoryCardWidget>
     );
     _matchScaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.30)
+        tween: Tween<double>(begin: 1.0, end: 1.50)
             .chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 55,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.30, end: 1.0)
+        tween: Tween<double>(begin: 1.50, end: 1.0)
             .chain(CurveTween(curve: Curves.bounceOut)),
         weight: 45,
       ),

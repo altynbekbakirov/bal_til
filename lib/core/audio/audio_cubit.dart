@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../alippe/core/alippe_audio.dart';
 import 'audio_controller.dart';
 
 class AudioState {
@@ -22,12 +21,21 @@ class AudioState {
 
 class AudioCubit extends Cubit<AudioState> {
   final AudioController _controller = AudioController.instance;
+  Future<void>? _loadingFuture;
 
   AudioCubit() : super(const AudioState(isMusicEnabled: true, isSoundEnabled: true)) {
     loadPreferences();
   }
 
   Future<void> loadPreferences() async {
+    if (_loadingFuture != null) {
+      await _loadingFuture;
+    }
+    _loadingFuture = _loadPreferencesInternal();
+    await _loadingFuture;
+  }
+
+  Future<void> _loadPreferencesInternal() async {
     final prefs = await SharedPreferences.getInstance();
     final music = prefs.getBool('music_enabled') ?? true;
     final sound = prefs.getBool('sound_enabled') ?? true;
@@ -35,10 +43,7 @@ class AudioCubit extends Cubit<AudioState> {
     _controller.isMusicEnabled = music;
     _controller.isSoundEnabled = sound;
 
-    AlippeAudio().isMusicEnabled = music;
-    AlippeAudio().isSoundEnabled = sound;
     if (!music) {
-      await AlippeAudio().stopMusic();
       _controller.stopMenuMusic();
       _controller.stopGameplayMusic();
     }
@@ -47,20 +52,20 @@ class AudioCubit extends Cubit<AudioState> {
   }
 
   Future<void> toggleMusic() async {
+    if (_loadingFuture != null) await _loadingFuture;
     final newValue = !state.isMusicEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('music_enabled', newValue);
 
     _controller.toggleMusic(newValue);
-    await AlippeAudio().setMusicEnabled(newValue);
 
     emit(state.copyWith(isMusicEnabled: newValue));
   }
 
   Future<void> toggleSound() async {
+    if (_loadingFuture != null) await _loadingFuture;
     final newValue = !state.isSoundEnabled;
     _controller.toggleSound(newValue);
-    AlippeAudio().setSoundEnabled(newValue);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('sound_enabled', newValue);

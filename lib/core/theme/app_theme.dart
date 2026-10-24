@@ -13,7 +13,7 @@ class AppTheme {
   static const Color surfaceCard = Colors.white;
 
   static ThemeData get lightTheme {
-    final fontName = GoogleFonts.comfortaa().fontFamily;
+    final fontName = GoogleFonts.nunito().fontFamily;
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontName,
@@ -37,12 +37,12 @@ class AppTheme {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 6,
-        titleTextStyle: GoogleFonts.comfortaa(
+        titleTextStyle: GoogleFonts.nunito(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: const Color(0xFF1E293B),
         ),
-        contentTextStyle: GoogleFonts.comfortaa(
+        contentTextStyle: GoogleFonts.nunito(
           fontSize: 14,
           color: const Color(0xFF475569),
           height: 1.45,
@@ -51,7 +51,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: const Color(0xFFEA580C),
-          textStyle: GoogleFonts.comfortaa(
+          textStyle: GoogleFonts.nunito(
             fontWeight: FontWeight.bold,
             fontSize: 14,
           ),

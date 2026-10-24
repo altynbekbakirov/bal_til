@@ -122,7 +122,7 @@ class _ExitToastWidget extends StatelessWidget {
                 Flexible(
                   child: Text(
                     message,
-                    style: GoogleFonts.comfortaa(
+                    style: GoogleFonts.nunito(
                       color: Colors.white,
                       fontSize: 12.5,
                       fontWeight: FontWeight.bold,

@@ -16,30 +16,38 @@ class AlippeSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isCompact = screenHeight < 360;
+    final btnSize = isCompact ? 80.0 : 92.0;
+    final playSize = isCompact ? 88.0 : 100.0;
+
     return Container(
-      width: 140,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      width: isCompact ? 116 : 134,
+      padding: EdgeInsets.symmetric(
+        vertical: isCompact ? 10 : 14,
+        horizontal: isCompact ? 8 : 10,
+      ),
       child: Column(
         children: [
           AlippeAnimButton(
-            width: 85,
-            height: 85,
+            width: btnSize,
+            height: btnSize,
             imageAsset: AlippeAssets.sideSettings,
             onPress: onSettings,
           ),
           if (onBack != null) ...[
-            const SizedBox(height: 14),
+            SizedBox(height: isCompact ? 8 : 12),
             AlippeAnimButton(
-              width: 85,
-              height: 85,
+              width: btnSize,
+              height: btnSize,
               imageAsset: AlippeAssets.sideBack,
               onPress: onBack!,
             ),
           ],
           const Spacer(),
           AlippeAnimButton(
-            width: 90,
-            height: 90,
+            width: playSize,
+            height: playSize,
             imageAsset: AlippeAssets.sidePlay,
             onPress: onPlay,
           ),

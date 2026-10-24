@@ -279,70 +279,81 @@ void main() {
     });
   });
 
-  group('Shared Audio Settings (Bal Til & Alippe)', () {
+  group('Separated Audio Settings (Bal Til 1 & Bal Til 2)', () {
     setUp(() {
       SharedPreferences.setMockInitialValues({});
-      AudioController.instance.isSoundEnabled = false;
-      AudioController.instance.isMusicEnabled = false;
-      AlippeAudio().isSoundEnabled = false;
-      AlippeAudio().isMusicEnabled = false;
+      AudioController.instance.isSoundEnabled = true;
+      AudioController.instance.isMusicEnabled = true;
+      AlippeAudio().isSoundEnabled = true;
+      AlippeAudio().isMusicEnabled = true;
     });
 
-    test('AudioCubit toggleMusic toggles music for both AudioController and AlippeAudio', () async {
+    test('AudioCubit toggleMusic toggles only AudioController without affecting AlippeAudio', () async {
       final cubit = AudioCubit();
       await cubit.loadPreferences();
 
-      // Default is enabled
       expect(cubit.state.isMusicEnabled, true);
       expect(AudioController.instance.isMusicEnabled, true);
       expect(AlippeAudio().isMusicEnabled, true);
 
-      // Toggle off
+      // Toggle off in Bal Til
       await cubit.toggleMusic();
       expect(cubit.state.isMusicEnabled, false);
       expect(AudioController.instance.isMusicEnabled, false);
-      expect(AlippeAudio().isMusicEnabled, false);
+      // Alippe remains independent
+      expect(AlippeAudio().isMusicEnabled, true);
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getBool('music_enabled'), false);
+      expect(prefs.getBool('alippe_music_enabled'), null);
 
-      // Toggle back on
+      // Toggle back on in Bal Til
       await cubit.toggleMusic();
       expect(cubit.state.isMusicEnabled, true);
       expect(AudioController.instance.isMusicEnabled, true);
       expect(AlippeAudio().isMusicEnabled, true);
-      expect(prefs.getBool('music_enabled'), true);
     });
 
-    test('AlippeCubit volume slider synchronizes global music_enabled and sound_enabled', () async {
+    test('AudioCubit toggleSound toggles only AudioController sound without affecting AlippeAudio', () async {
+      final cubit = AudioCubit();
+      await cubit.loadPreferences();
+
+      // Toggle off sound in Bal Til
+      await cubit.toggleSound();
+      expect(cubit.state.isSoundEnabled, false);
+      expect(AudioController.instance.isSoundEnabled, false);
+      // Alippe remains independent
+      expect(AlippeAudio().isSoundEnabled, true);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('sound_enabled'), false);
+      expect(prefs.getBool('alippe_sound_enabled'), null);
+    });
+
+    test('AlippeCubit volume slider updates only Alippe without affecting Bal Til audio', () async {
       final alippeCubit = AlippeCubit();
       await alippeCubit.init();
 
-      // Setting volume to 0 turns off music globally
+      // Bal Til remains enabled
+      expect(AudioController.instance.isMusicEnabled, true);
+      expect(AudioController.instance.isSoundEnabled, true);
+
+      // Setting Alippe music volume to 0 turns off only Alippe music
       await alippeCubit.setMusValue(0.0);
       expect(AlippeAudio().isMusicEnabled, false);
-      expect(AudioController.instance.isMusicEnabled, false);
+      expect(AudioController.instance.isMusicEnabled, true);
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('music_enabled'), false);
+      expect(prefs.getBool('alippe_music_enabled'), false);
+      expect(prefs.getBool('music_enabled'), null);
 
-      // Setting volume above 0 turns music on globally
-      await alippeCubit.setMusValue(0.8);
-      expect(AlippeAudio().isMusicEnabled, true);
-      expect(AudioController.instance.isMusicEnabled, true);
-      expect(prefs.getBool('music_enabled'), true);
-
-      // Setting sound volume to 0 turns off sound globally
+      // Setting Alippe sound volume to 0 turns off only Alippe sound
       await alippeCubit.setSndValue(0.0);
       expect(AlippeAudio().isSoundEnabled, false);
-      expect(AudioController.instance.isSoundEnabled, false);
-      expect(prefs.getBool('sound_enabled'), false);
-
-      // Setting sound volume above 0 turns sound on globally
-      await alippeCubit.setSndValue(0.6);
-      expect(AlippeAudio().isSoundEnabled, true);
       expect(AudioController.instance.isSoundEnabled, true);
-      expect(prefs.getBool('sound_enabled'), true);
+
+      expect(prefs.getBool('alippe_sound_enabled'), false);
+      expect(prefs.getBool('sound_enabled'), null);
     });
 
     test('Audio separation respects active game status', () async {

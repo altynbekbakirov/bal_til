@@ -20,44 +20,51 @@ class AlippeBookScreen extends StatelessWidget {
           children: [
             // Left page: Section 1
             Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: AlippeAnimButton(
-                    imageAsset: AlippeData.getSectionIcon(book.section1Id),
-                    onPress: () {
-                      Navigator.of(context).pushNamed(
-                        '/section',
-                        arguments: book.section1Id,
-                      );
-                    },
-                  ),
-                ),
+              child: _buildSectionItem(
+                context: context,
+                sectionId: book.section1Id,
               ),
             ),
 
-            const SizedBox(width: 40),
+            const SizedBox(width: 32),
 
             // Right page: Section 2
             Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: book.section2Id != null
-                      ? AlippeAnimButton(
-                          imageAsset: AlippeData.getSectionIcon(book.section2Id!),
-                          onPress: () {
-                            Navigator.of(context).pushNamed(
-                              '/section',
-                              arguments: book.section2Id,
-                            );
-                          },
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ),
+              child: book.section2Id != null
+                  ? _buildSectionItem(
+                      context: context,
+                      sectionId: book.section2Id!,
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionItem({
+    required BuildContext context,
+    required int sectionId,
+  }) {
+    // Section 5 (Book 3 right icon) has a slightly smaller asset; a 1.35 scale makes it balanced with the left icon
+    final scale = (sectionId == 5) ? 1.35 : 1.0;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Transform.scale(
+          scale: scale,
+          child: AlippeAnimButton(
+            scaleFactor: 1.25,
+            imageAsset: AlippeData.getSectionIcon(sectionId),
+            onPress: () {
+              Navigator.of(context).pushNamed(
+                '/section',
+                arguments: sectionId,
+              );
+            },
+          ),
         ),
       ),
     );

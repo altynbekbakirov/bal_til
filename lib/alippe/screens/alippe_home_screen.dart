@@ -46,17 +46,60 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
     super.dispose();
   }
 
-  String _getStarAsset(int score) {
-    switch (score) {
-      case 1:
-        return AlippeAssets.starOneEn;
-      case 2:
-        return AlippeAssets.starTwoEn;
-      case 3:
-        return AlippeAssets.starThreeEn;
-      default:
-        return AlippeAssets.starOneDis;
-    }
+  Widget _buildStars(int score) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final starHeight = constraints.maxHeight;
+        final shift = (starHeight * 0.22).clamp(4.0, 14.0);
+
+        Widget buildSingleStar({
+          required bool isEarned,
+          required String enabledAsset,
+          required String disabledAsset,
+          required double offsetX,
+        }) {
+          final star = Opacity(
+            opacity: isEarned ? 1.0 : 0.32,
+            child: Image.asset(
+              isEarned ? enabledAsset : disabledAsset,
+              height: starHeight,
+              fit: BoxFit.contain,
+            ),
+          );
+
+          if (offsetX == 0) return star;
+          return Transform.translate(
+            offset: Offset(offsetX, 0),
+            child: star,
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            buildSingleStar(
+              isEarned: score >= 1,
+              enabledAsset: AlippeAssets.starOneEn,
+              disabledAsset: AlippeAssets.starOneDis,
+              offsetX: shift,
+            ),
+            buildSingleStar(
+              isEarned: score >= 2,
+              enabledAsset: AlippeAssets.starTwoEn,
+              disabledAsset: AlippeAssets.starTwoDis,
+              offsetX: 0,
+            ),
+            buildSingleStar(
+              isEarned: score >= 3,
+              enabledAsset: AlippeAssets.starThreeEn,
+              disabledAsset: AlippeAssets.starThreeDis,
+              offsetX: -shift,
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onBookTap(BuildContext context, AlippeBookModel book) {
@@ -108,7 +151,7 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
               // 6 Books Grid (2 rows of 3 books)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                  padding: const EdgeInsets.fromLTRB(6, 8, 14, 8),
                   child: Column(
                     children: [
                       // Top row: Books 0, 1, 2
@@ -121,7 +164,7 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       // Bottom row: Books 3, 4, 5
                       Expanded(
                         child: Row(
@@ -147,23 +190,28 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
   Widget _buildBookItem(BuildContext context, AlippeBookModel book, int score) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
         child: AlippeAnimButton(
-          scaleFactor: 1.35,
+          scaleFactor: 1.2,
           onPress: () => _onBookTap(context, book),
           child: Column(
             children: [
+              // Stars on the top of the game card (flex 1)
               Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: _buildStars(score),
+                ),
+              ),
+              const SizedBox(height: 2),
+              // Book icon below the stars (flex 3)
+              Expanded(
+                flex: 3,
                 child: Image.asset(
                   book.icon,
                   fit: BoxFit.contain,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Image.asset(
-                _getStarAsset(score),
-                height: 28,
-                fit: BoxFit.contain,
               ),
             ],
           ),

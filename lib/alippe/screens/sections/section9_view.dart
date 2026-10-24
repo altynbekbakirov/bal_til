@@ -80,7 +80,7 @@ class _Section9ViewState extends State<Section9View> {
   void _setupChoices() {
     final random = math.Random();
     // Goal between 1 and 5 (matching React Native randomIntFromInterval(1, 5))
-    _goal = random.nextInt(4) + 2; // 2 to 5 balloons
+    _goal = random.nextInt(5) + 1;
 
     // Fill 6 choices: _goal of target color, rest random other colors
     final List<int?> list = [];
@@ -158,24 +158,27 @@ class _Section9ViewState extends State<Section9View> {
           children: [
             // Left page: 6 Balloons (2 rows of 3) matching React Section 9
             Expanded(
-              child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Row 1
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (int i = 0; i < 3; i++) _buildBalloonChoice(i),
-                      ],
+                    Expanded(
+                      child: Row(
+                        children: [
+                          for (int i = 0; i < 3; i++)
+                            Expanded(child: _buildBalloonChoice(i)),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
                     // Row 2
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (int i = 3; i < 6; i++) _buildBalloonChoice(i),
-                      ],
+                    Expanded(
+                      child: Row(
+                        children: [
+                          for (int i = 3; i < 6; i++)
+                            Expanded(child: _buildBalloonChoice(i)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -228,42 +231,54 @@ class _Section9ViewState extends State<Section9View> {
   }
 
   Widget _buildBalloonChoice(int index) {
-    if (index >= _availableChoices.length) return const SizedBox.shrink();
+    if (index >= _availableChoices.length) return const SizedBox.expand();
     final colorIdx = _availableChoices[index];
-    if (colorIdx == null) return const SizedBox(width: 90, height: 90);
+    if (colorIdx == null) return const SizedBox.expand();
 
     final colorItem = _colors[colorIdx];
 
-    return Transform.rotate(
-      angle: -5 * math.pi / 180, // React Native's -5deg tilt
-      child: Draggable<Map<String, int>>(
-        data: {'choiceIndex': index, 'colorIndex': colorIdx},
-        onDragStarted: () => AlippeAudio().playPickUp2(),
-        onDraggableCanceled: (velocity, offset) => AlippeAudio().playBackSwoosh(),
-        feedback: Material(
-          color: Colors.transparent,
-          child: Transform.rotate(
-            angle: -5 * math.pi / 180,
-            child: Transform.scale(
-              scale: 1.2,
-              child: SizedBox(
-                width: 95,
-                height: 95,
-                child: Image.asset(colorItem.btnImage, fit: BoxFit.contain),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+
+        Widget buildBalloonContent() {
+          return Center(
+            child: SizedBox(
+              width: w,
+              height: h,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                child: Transform.rotate(
+                  angle: -5 * math.pi / 180,
+                  child: Transform.scale(
+                    scale: 0.78,
+                    child: Image.asset(
+                      colorItem.btnImage,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
               ),
             ),
+          );
+        }
+
+        return Draggable<Map<String, int>>(
+          data: {'choiceIndex': index, 'colorIndex': colorIdx},
+          onDragStarted: () => AlippeAudio().playPickUp2(),
+          onDraggableCanceled: (velocity, offset) => AlippeAudio().playBackSwoosh(),
+          feedback: Material(
+            color: Colors.transparent,
+            child: buildBalloonContent(),
           ),
-        ),
-        childWhenDragging: const Opacity(
-          opacity: 0.0,
-          child: SizedBox(width: 90, height: 90),
-        ),
-        child: SizedBox(
-          width: 90,
-          height: 90,
-          child: Image.asset(colorItem.btnImage, fit: BoxFit.contain),
-        ),
-      ),
+          childWhenDragging: const Opacity(
+            opacity: 0.0,
+            child: SizedBox.expand(),
+          ),
+          child: buildBalloonContent(),
+        );
+      },
     );
   }
 }

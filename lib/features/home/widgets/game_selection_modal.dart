@@ -297,26 +297,19 @@ class GameSelectionModal extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Card 1: Alippe (3-6 years)
+              // Card 1: Бал тил 1 (3-6 years)
               _buildGameCard(
                 context: context,
-                badgeText: 'Мектепке чейинки курак • Бала бакча',
-                badgeColor: const Color(0xFFEA580C),
-                title: '«Алиппе»',
+                title: 'Бал тил 1',
                 ageRange: '3 – 6 жаш',
-                icon: Icons.child_care_rounded,
                 primaryColor: const Color(0xFFEA580C),
                 gradientColors: [
                   const Color(0xFFFFF7ED),
                   const Color(0xFFFFEDD5),
                 ],
                 borderColor: const Color(0xFFFDBA74),
-                bulletPoints: const [
-                  'Үндүү жана сүрөттүү 36 тамгалуу алиппе',
-                  '2-3 тамгалуу сөздөр (Ай, Ат, От, Үй, Топ, Нан...)',
-                  'Көлөкөсүн табуу жана түстүү шар саноо',
-                  'Эстутум карточкалары жана интерактивдүү китептер',
-                ],
-                buttonText: '«Алиппеге» өтүү (3–6 жаш)',
+                iconAsset: 'assets/alippe/images/icon.png',
+                fallbackIcon: Icons.child_care_rounded,
                 buttonColor: const Color(0xFFEA580C),
                 onSelect: () {
                   Navigator.pop(context);
@@ -326,27 +319,19 @@ class GameSelectionModal extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // Card 2: Bal Til (7-10 years)
+              // Card 2: Бал тил 2 (7-10 years)
               _buildGameCard(
                 context: context,
-                badgeText: '1 – 4-класс • Башталгыч класстар',
-                badgeColor: AppTheme.emeraldGreen,
-                title: '«Бал тил»',
+                title: 'Бал тил 2',
                 ageRange: '7 – 10 жаш',
-                icon: Icons.school_rounded,
                 primaryColor: AppTheme.emeraldGreen,
                 gradientColors: [
                   const Color(0xFFECFDF5),
                   const Color(0xFFD1FAE5),
                 ],
                 borderColor: const Color(0xFF6EE7B7),
-                bulletPoints: const [
-                  'Сөздү тап (34 деңгээл) жана Сөз издөө (30 деңгээл)',
-                  'Кыргызстандын интерактивдүү картасы (7 облус, кооз жерлер)',
-                  'Мамлекеттик гимн жана сөздөрүн үйрөнүү',
-                  'Кыргызстандын жаныбарлар жана өсүмдүктөр дүйнөсү',
-                ],
-                buttonText: '«Бал тилди» улантуу (7–10 жаш)',
+                iconAsset: 'assets/images/app_icon.png',
+                fallbackIcon: Icons.school_rounded,
                 buttonColor: AppTheme.emeraldGreen,
                 isCurrent: true,
                 onSelect: () async {
@@ -364,16 +349,13 @@ class GameSelectionModal extends StatelessWidget {
 
   Widget _buildGameCard({
     required BuildContext context,
-    required String badgeText,
-    required Color badgeColor,
     required String title,
     required String ageRange,
-    required IconData icon,
     required Color primaryColor,
     required List<Color> gradientColors,
     required Color borderColor,
-    required List<String> bulletPoints,
-    required String buttonText,
+    required String iconAsset,
+    required IconData fallbackIcon,
     required Color buttonColor,
     required VoidCallback onSelect,
     bool isCurrent = false,
@@ -406,142 +388,119 @@ class GameSelectionModal extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Badge + Icon Row
-              Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              // Left side: Title, Children years, and Action button
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isCurrent)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: badgeColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
+                          color: AppTheme.emeraldGreen.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.emeraldGreen.withValues(alpha: 0.3)),
                         ),
-                        child: Text(
-                          badgeText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: const Text(
+                          'Азыркы оюн',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.bold,
-                            color: badgeColor,
+                            color: AppTheme.emeraldGreen,
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-                      ],
-                    ),
-                    child: Icon(icon, color: primaryColor, size: 24),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Title & Age
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      ageRange,
+                    Text(
+                      title,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.3,
                       ),
                     ),
-                  ),
-                  if (isCurrent)
-                    const Text(
-                      '• Азыркы оюн',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.emeraldGreen,
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        ageRange,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
                       ),
                     ),
-                ],
+                    const SizedBox(height: 14),
+                    ElevatedButton(
+                      onPressed: () {
+                        AudioController.instance.playButtonClick();
+                        onSelect();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        foregroundColor: Colors.white,
+                        elevation: 1,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Ойноо',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(Icons.arrow_forward_rounded, size: 15),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-
-              // Bullets
-              ...bulletPoints.map((point) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(top: 5, right: 8),
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: primaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            point,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              height: 1.35,
-                              color: Color(0xFF334155),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-              const SizedBox(height: 14),
-
-              // Action button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    AudioController.instance.playButtonClick();
-                    onSelect();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: buttonColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              const SizedBox(width: 14),
+              // Right side: Large image of game
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 95,
+                  height: 95,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    buttonText,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  child: Image.asset(
+                    iconAsset,
+                    width: 95,
+                    height: 95,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: primaryColor.withValues(alpha: 0.1),
+                      child: Icon(
+                        fallbackIcon,
+                        color: primaryColor,
+                        size: 42,
+                      ),
+                    ),
                   ),
                 ),
               ),

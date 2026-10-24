@@ -476,9 +476,13 @@ class AlippeData {
   static List<String> get section5Items =>
       List.generate(18, (i) => 'assets/alippe/images/books/book3/section2/items/${i + 1}.png');
 
-  // Section 6: items 0..4 (Body Parts 1)
-  static List<String> get section6Items =>
-      List.generate(5, (i) => 'assets/alippe/images/books/book4/section1/items/$i.png');
+  // Section 6: 4 items (Body Parts 1 - Boy on left, Hand, Foot, Head on right)
+  static List<String> get section6Items => const [
+    'assets/alippe/images/books/book4/section1/items/0.png',
+    'assets/alippe/images/books/book4/section1/items/1.png',
+    'assets/alippe/images/books/book4/section1/items/2.png',
+    'assets/alippe/images/books/book4/section1/items/3.png',
+  ];
 
   // Section 7: items 0..8 (Body Parts 2)
   static List<String> get section7Items =>
@@ -571,12 +575,12 @@ class AlippeData {
       case 5:
         return isBoy
             ? const [
-                'assets/alippe/audio/alippe/boy/measures/boy_az.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_kop.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_solgo.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ongo.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ildiy.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_oido.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_jumshak.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_katuu.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_chon.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_kichine.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_jaryk.mp3',
@@ -587,16 +591,16 @@ class AlippeData {
                 'assets/alippe/audio/alippe/boy/measures/boy_oor.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_ysyk.mp3',
                 'assets/alippe/audio/alippe/boy/measures/boy_muzdak.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_katuu.mp3',
-                'assets/alippe/audio/alippe/boy/measures/boy_jumshak.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_az.mp3',
+                'assets/alippe/audio/alippe/boy/measures/boy_kop.mp3',
               ]
             : const [
-                'assets/alippe/audio/alippe/girl/measures/g_az.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_kop.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_solgo.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_ongo.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_ildiy.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_oido.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_jumshak.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_katuu.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_chon.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_kichine.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_jaryk.mp3',
@@ -607,24 +611,22 @@ class AlippeData {
                 'assets/alippe/audio/alippe/girl/measures/g_oor.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_ysyk.mp3',
                 'assets/alippe/audio/alippe/girl/measures/g_muzdak.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_katuu.mp3',
-                'assets/alippe/audio/alippe/girl/measures/g_jumshak.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_az.mp3',
+                'assets/alippe/audio/alippe/girl/measures/g_kop.mp3',
               ];
       case 6:
         return isBoy
             ? const [
                 'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_kol.mp3',
-                'assets/alippe/audio/alippe/boy/body_parts/boy_kol.mp3',
-                'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_but.mp3',
+                'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
               ]
             : const [
                 'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_kol.mp3',
-                'assets/alippe/audio/alippe/girl/body_parts/g_kol.mp3',
-                'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_but.mp3',
+                'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
               ];
       case 7:
         return isBoy
@@ -674,19 +676,22 @@ class AlippeData {
         ];
       case 5:
         return const [
-          'Аз', 'Көп',
           'Солго', 'Оңго',
           'Ылдый', 'Өйдө',
+          'Жумшак', 'Катуу',
           'Чоң', 'Кичине',
           'Жарык', 'Караңгы',
           'Алыс', 'Жакын',
           'Жеңил', 'Оор',
           'Ысык', 'Муздак',
-          'Катуу', 'Жумшак',
+          'Аз', 'Көп',
         ];
       case 6:
         return const [
-          'Баш', 'Кол', 'Кол', 'Баш', 'Бут',
+          'Бала',
+          'Кол',
+          'Бут',
+          'Баш',
         ];
       case 7:
         return const [

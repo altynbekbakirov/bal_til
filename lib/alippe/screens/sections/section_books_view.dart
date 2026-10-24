@@ -115,10 +115,10 @@ class _SectionBooksViewState extends State<SectionBooksView> {
     final rightItem = rightIdx < _items.length ? _items[rightIdx] : null;
 
     final leftSound = isBodySection
-        ? (widget.sectionId == 7 && sounds.isNotEmpty ? sounds[0] : null)
+        ? (sounds.isNotEmpty ? sounds[0] : null)
         : (leftIdx < sounds.length ? sounds[leftIdx] : null);
     final leftText = isBodySection
-        ? (widget.sectionId == 7 && texts.isNotEmpty ? texts[0] : null)
+        ? (texts.isNotEmpty ? texts[0] : null)
         : (leftIdx < texts.length ? texts[leftIdx] : null);
 
     final rightSound = rightIdx < sounds.length ? sounds[rightIdx] : null;

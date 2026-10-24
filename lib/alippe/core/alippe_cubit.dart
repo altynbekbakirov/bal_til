@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/audio/audio_controller.dart';
 import 'alippe_audio.dart';
 
 class AlippeState {
@@ -40,14 +39,16 @@ class AlippeCubit extends Cubit<AlippeState> {
 
   static const _keyMusValue = 'alippe_mus_value';
   static const _keySndValue = 'alippe_snd_value';
+  static const _keyMusicEnabled = 'alippe_music_enabled';
+  static const _keySoundEnabled = 'alippe_sound_enabled';
   static const _keyBoyActive = 'alippe_boy_active';
   static const _keyScores = 'alippe_scores';
   static const _keyLastSection = 'alippe_last_section';
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    final musicEnabled = prefs.getBool('music_enabled') ?? true;
-    final soundEnabled = prefs.getBool('sound_enabled') ?? true;
+    final musicEnabled = prefs.getBool(_keyMusicEnabled) ?? true;
+    final soundEnabled = prefs.getBool(_keySoundEnabled) ?? true;
     final savedMus = prefs.getDouble(_keyMusValue) ?? 0.7;
     final savedSnd = prefs.getDouble(_keySndValue) ?? 0.7;
 
@@ -68,9 +69,6 @@ class AlippeCubit extends Cubit<AlippeState> {
     AlippeAudio().setMusicVolume(mus);
     AlippeAudio().setSoundVolume(snd);
 
-    AudioController.instance.isMusicEnabled = musicEnabled;
-    AudioController.instance.isSoundEnabled = soundEnabled;
-
     emit(state.copyWith(
       musValue: mus,
       sndValue: snd,
@@ -87,17 +85,11 @@ class AlippeCubit extends Cubit<AlippeState> {
     AlippeAudio().isMusicEnabled = isEnabled;
     await AlippeAudio().setMusicVolume(clamped);
 
-    AudioController.instance.isMusicEnabled = isEnabled;
-    if (!isEnabled) {
-      AudioController.instance.stopMenuMusic();
-      AudioController.instance.stopGameplayMusic();
-    }
-
     emit(state.copyWith(musValue: clamped));
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keyMusValue, clamped);
-    await prefs.setBool('music_enabled', isEnabled);
+    await prefs.setBool(_keyMusicEnabled, isEnabled);
   }
 
   Future<void> setSndValue(double val) async {
@@ -107,13 +99,11 @@ class AlippeCubit extends Cubit<AlippeState> {
     AlippeAudio().isSoundEnabled = isEnabled;
     AlippeAudio().setSoundVolume(clamped);
 
-    AudioController.instance.isSoundEnabled = isEnabled;
-
     emit(state.copyWith(sndValue: clamped));
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keySndValue, clamped);
-    await prefs.setBool('sound_enabled', isEnabled);
+    await prefs.setBool(_keySoundEnabled, isEnabled);
   }
 
   Future<void> setBoyActive(bool boy) async {
