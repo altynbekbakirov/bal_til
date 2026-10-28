@@ -28,10 +28,19 @@ class _WordConnectView extends StatefulWidget {
 }
 
 class _WordConnectViewState extends State<_WordConnectView> {
+  bool _isCompletedDialogShown = false;
+
   @override
   void initState() {
     super.initState();
     AudioController.instance.playGameplayMusic();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<WordConnectCubit>().state;
+      if (state is WordConnectPlaying && state.isCompleted && state.currentOverallLevel >= state.totalLevels) {
+        _showGameCompletedDialog(context, state);
+      }
+    });
   }
 
   @override
@@ -131,11 +140,14 @@ class _WordConnectViewState extends State<_WordConnectView> {
         listener: (context, state) {
           if (state is WordConnectPlaying && state.isCompleted) {
             context.read<ScoreCubit>().loadScores();
-            if (state.currentOverallLevel >= state.totalLevels) {
-              _showGameCompletedDialog(context, state);
-            } else {
-              _showVictoryDialog(context, state);
-            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (state.currentOverallLevel >= state.totalLevels) {
+                _showGameCompletedDialog(context, state);
+              } else {
+                _showVictoryDialog(context, state);
+              }
+            });
           }
         },
         builder: (context, state) {
@@ -495,6 +507,8 @@ class _WordConnectViewState extends State<_WordConnectView> {
   }
 
   void _showGameCompletedDialog(BuildContext context, WordConnectPlaying state) {
+    if (_isCompletedDialogShown) return;
+    _isCompletedDialogShown = true;
     bool isDismissing = false;
     showDialog(
       context: context,
@@ -552,25 +566,40 @@ class _WordConnectViewState extends State<_WordConnectView> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem(
-                            icon: Icons.star_rounded,
-                            iconColor: AppTheme.sunnyYellow,
-                            value: '${state.totalStars}',
-                            label: 'Жылдыздар',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.star_rounded,
+                                iconColor: AppTheme.sunnyYellow,
+                                value: '${state.totalStars}',
+                                label: 'Жылдыздар',
+                              ),
+                            ),
                           ),
                           Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
-                          _buildStatItem(
-                            icon: Icons.military_tech_rounded,
-                            iconColor: AppTheme.skyTurquoise,
-                            value: '${state.totalScore}',
-                            label: 'Жалпы упай',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.military_tech_rounded,
+                                iconColor: AppTheme.skyTurquoise,
+                                value: '${state.totalScore}',
+                                label: 'Жалпы упай',
+                              ),
+                            ),
                           ),
                           Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
-                          _buildStatItem(
-                            icon: Icons.task_alt_rounded,
-                            iconColor: AppTheme.emeraldGreen,
-                            value: '${state.totalLevels}/${state.totalLevels}',
-                            label: 'Деңгээлдер',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.task_alt_rounded,
+                                iconColor: AppTheme.emeraldGreen,
+                                value: '${state.totalLevels}/${state.totalLevels}',
+                                label: 'Деңгээлдер',
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -583,6 +612,7 @@ class _WordConnectViewState extends State<_WordConnectView> {
                             ? null
                             : () {
                                 setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
                                 AudioController.instance.playButtonClick();
                                 Navigator.pop(dialogCtx);
                                 Navigator.pop(context);
@@ -608,6 +638,7 @@ class _WordConnectViewState extends State<_WordConnectView> {
                             ? null
                             : () {
                                 setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
                                 AudioController.instance.playButtonClick();
                                 Navigator.pop(dialogCtx);
                                 context.read<WordConnectCubit>().restartGame();

@@ -27,10 +27,19 @@ class _WordSearchView extends StatefulWidget {
 }
 
 class _WordSearchViewState extends State<_WordSearchView> {
+  bool _isCompletedDialogShown = false;
+
   @override
   void initState() {
     super.initState();
     AudioController.instance.playGameplayMusic();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<WordSearchCubit>().state;
+      if (state is WordSearchPlaying && state.isCompleted && (state.currentOverallLevel >= state.totalLevels || state.isGameCompleted)) {
+        _showGameCompletedDialog(context, state);
+      }
+    });
   }
 
   @override
@@ -91,11 +100,11 @@ class _WordSearchViewState extends State<_WordSearchView> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle_rounded, size: 16, color: AppTheme.emeraldGreen),
+                      const Icon(Icons.star_rounded, size: 18, color: Color(0xFF047857)),
                       const SizedBox(width: 4),
                       Text(
-                        '${state.categoriesCompleted}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.emeraldGreen),
+                        '${state.totalStars}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF047857)),
                       ),
                       const SizedBox(width: 8),
                       const Icon(Icons.military_tech_rounded, size: 18, color: AppTheme.skyTurquoise),
@@ -129,12 +138,25 @@ class _WordSearchViewState extends State<_WordSearchView> {
         },
         listener: (context, state) {
           if (state is WordSearchPlaying && state.isCompleted) {
-            context.read<ScoreCubit>().loadScores();
-            if (state.currentOverallLevel >= state.totalLevels) {
-              _showGameCompletedDialog(context, state);
-            } else {
-              _showVictoryDialog(context, state);
-            }
+            try {
+              context.read<ScoreCubit>().loadScores();
+            } catch (_) {}
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (state.currentOverallLevel >= state.totalLevels || state.isGameCompleted) {
+                _showGameCompletedDialog(context, state);
+              } else {
+                final wsCubit = context.read<WordSearchCubit>();
+                Future.delayed(const Duration(milliseconds: 700), () {
+                  if (!mounted) return;
+                  wsCubit.nextLevel();
+                  if (!context.mounted) return;
+                  try {
+                    context.read<ScoreCubit>().loadScores();
+                  } catch (_) {}
+                });
+              }
+            });
           }
         },
         builder: (context, state) {
@@ -283,82 +305,9 @@ class _WordSearchViewState extends State<_WordSearchView> {
     );
   }
 
-  void _showVictoryDialog(BuildContext context, WordSearchPlaying state) {
-    bool isDismissing = false;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (dialogCtx, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.emoji_events_rounded, size: 72, color: AppTheme.emeraldGreen)
-                        .animate()
-                        .scale(duration: 500.ms, curve: Curves.elasticOut),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Куттуктайбыз!',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '+${state.scoreEarned} упай топтолду!',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.emeraldGreen,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${state.currentOverallLevel}/${state.totalLevels}-деңгээл ийгиликтүү бүттү!',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: isDismissing
-                          ? null
-                          : () {
-                              setDialogState(() => isDismissing = true);
-                              AudioController.instance.playButtonClick();
-                              Navigator.pop(dialogCtx);
-                              context.read<WordSearchCubit>().nextLevel();
-                              context.read<ScoreCubit>().loadScores();
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.emeraldGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                      child: const Text(
-                        'Кийинки деңгээл',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _showGameCompletedDialog(BuildContext context, WordSearchPlaying state) {
+    if (_isCompletedDialogShown) return;
+    _isCompletedDialogShown = true;
     bool isDismissing = false;
     showDialog(
       context: context,
@@ -416,25 +365,40 @@ class _WordSearchViewState extends State<_WordSearchView> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem(
-                            icon: Icons.check_circle_rounded,
-                            iconColor: AppTheme.emeraldGreen,
-                            value: '${state.categoriesCompleted}',
-                            label: 'Бүткөн топтом',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.star_rounded,
+                                iconColor: AppTheme.sunnyYellow,
+                                value: '${state.totalStars}',
+                                label: 'Жылдыздар',
+                              ),
+                            ),
                           ),
                           Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
-                          _buildStatItem(
-                            icon: Icons.military_tech_rounded,
-                            iconColor: AppTheme.skyTurquoise,
-                            value: '${state.totalScore}',
-                            label: 'Жалпы упай',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.military_tech_rounded,
+                                iconColor: AppTheme.skyTurquoise,
+                                value: '${state.totalScore}',
+                                label: 'Жалпы упай',
+                              ),
+                            ),
                           ),
                           Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
-                          _buildStatItem(
-                            icon: Icons.task_alt_rounded,
-                            iconColor: AppTheme.emeraldGreen,
-                            value: '${state.totalLevels}/${state.totalLevels}',
-                            label: 'Деңгээлдер',
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.task_alt_rounded,
+                                iconColor: AppTheme.emeraldGreen,
+                                value: '${state.totalLevels}/${state.totalLevels}',
+                                label: 'Деңгээлдер',
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -447,6 +411,7 @@ class _WordSearchViewState extends State<_WordSearchView> {
                             ? null
                             : () {
                                 setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
                                 AudioController.instance.playButtonClick();
                                 Navigator.pop(dialogCtx);
                                 Navigator.pop(context);
@@ -472,6 +437,7 @@ class _WordSearchViewState extends State<_WordSearchView> {
                             ? null
                             : () {
                                 setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
                                 AudioController.instance.playButtonClick();
                                 Navigator.pop(dialogCtx);
                                 context.read<WordSearchCubit>().restartGame();

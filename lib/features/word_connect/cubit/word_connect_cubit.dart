@@ -158,11 +158,16 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       int packIdx = progress.packIndex;
       int levelIdx = progress.levelIndex;
 
-      if (packIdx >= packs.length) {
-        packIdx = 0;
-        levelIdx = 0;
-      } else if (levelIdx >= packs[packIdx].levels.length) {
-        levelIdx = 0;
+      if (progress.isGameCompleted) {
+        packIdx = packs.length - 1;
+        levelIdx = packs[packIdx].levels.length - 1;
+      } else {
+        if (packIdx >= packs.length) {
+          packIdx = 0;
+          levelIdx = 0;
+        } else if (levelIdx >= packs[packIdx].levels.length) {
+          levelIdx = 0;
+        }
       }
 
       _startLevel(
@@ -171,6 +176,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
         levelIndex: levelIdx,
         totalScore: progress.totalScore,
         totalStars: progress.totalStars,
+        isCompleted: progress.isGameCompleted,
       );
     } catch (e) {
       emit(WordConnectError('Оюнду жүктөөдө ката чыкты: $e'));
@@ -183,6 +189,7 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     required int levelIndex,
     int totalScore = 0,
     int totalStars = 0,
+    bool isCompleted = false,
   }) {
     final pack = packs[packIndex];
     final level = pack.levels[levelIndex];
@@ -192,13 +199,13 @@ class WordConnectCubit extends Cubit<WordConnectState> {
       levelIndex: levelIndex,
       level: level,
       currentLetters: List.from(level.letters),
-      solvedWords: {},
+      solvedWords: isCompleted ? Set.from(level.words) : {},
       hintedLetters: {},
       currentAttempt: '',
       feedback: const WordFeedback(),
-      isCompleted: false,
+      isCompleted: isCompleted,
       hintsUsed: 0,
-      starsEarned: 0,
+      starsEarned: isCompleted ? 3 : 0,
       levelScore: 0,
       totalScore: totalScore,
       totalStars: totalStars,
@@ -521,12 +528,14 @@ class WordConnectCubit extends Cubit<WordConnectState> {
     if (state is! WordConnectPlaying) return;
     final s = state as WordConnectPlaying;
     await _scoreRepository.saveWordConnectCurrentPosition(0, 0);
+    await _scoreRepository.saveWordConnectGameCompleted(false);
     _startLevel(
       packs: s.packs,
       packIndex: 0,
       levelIndex: 0,
       totalScore: s.totalScore,
       totalStars: s.totalStars,
+      isCompleted: false,
     );
   }
 

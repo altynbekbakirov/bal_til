@@ -1,9 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/audio/audio_controller.dart';
+import '../../../core/score/score_cubit.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/repositories.dart';
+import '../../../data/repositories/score_repository.dart';
 
 enum NatureGameType {
   animals,
@@ -64,9 +68,14 @@ class NatureSpellingScreen extends StatefulWidget {
 
 class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
   final NatureRepository _repository = NatureRepository();
+  final ScoreRepository _scoreRepository = ScoreRepository();
   bool _isLoading = true;
   List<NatureSpellingItem> _items = [];
   int _currentIndex = 0;
+  int _totalScore = 0;
+  int _totalStars = 0;
+  bool _isGameCompleted = false;
+  bool _isCompletedDialogShown = false;
 
   static const int maxHintsPerItem = 3;
   int _hintsRemaining = maxHintsPerItem;
@@ -93,6 +102,15 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
         _items = list
             .map((a) => NatureSpellingItem(name: a.name, imagePath: a.imagePath))
             .toList();
+        final progress = await _scoreRepository.getAnimalsProgress();
+        _totalScore = progress.totalScore;
+        _totalStars = progress.totalStars;
+        _isGameCompleted = progress.isGameCompleted;
+        if (_isGameCompleted && _items.isNotEmpty) {
+          _currentIndex = _items.length - 1;
+        } else if (progress.currentIndex < _items.length) {
+          _currentIndex = progress.currentIndex;
+        }
       } else {
         final list = await _repository.loadPlants();
         _items = list
@@ -102,6 +120,15 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
                   description: p.description,
                 ))
             .toList();
+        final progress = await _scoreRepository.getPlantsProgress();
+        _totalScore = progress.totalScore;
+        _totalStars = progress.totalStars;
+        _isGameCompleted = progress.isGameCompleted;
+        if (_isGameCompleted && _items.isNotEmpty) {
+          _currentIndex = _items.length - 1;
+        } else if (progress.currentIndex < _items.length) {
+          _currentIndex = progress.currentIndex;
+        }
       }
     } catch (e) {
       debugPrint('Error loading nature items: $e');
@@ -112,10 +139,16 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
       setState(() {
         _isLoading = false;
         if (_items.isNotEmpty) {
-          _currentIndex = 0;
           _loadCurrentItem();
         }
       });
+      if (_isGameCompleted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _isGameCompleted && !_isCompletedDialogShown) {
+            _showGameCompletedDialog();
+          }
+        });
+      }
     }
   }
 
@@ -335,6 +368,12 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
         });
         AudioController.instance.playWordSolved();
 
+        final hintsUsed = maxHintsPerItem - _hintsRemaining;
+        final starsEarned = hintsUsed == 0 ? 3 : (hintsUsed == 1 ? 2 : 1);
+        final scoreEarned = (_flatSlots.length * 10) + (starsEarned * 10);
+
+        _recordLevelCompleted(starsEarned: starsEarned, scoreEarned: scoreEarned);
+
         Future.delayed(const Duration(milliseconds: 950), () {
           if (!mounted) return;
           if (_currentIndex < _items.length - 1) {
@@ -344,7 +383,7 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
             });
           } else {
             AudioController.instance.playLevelComplete();
-            _showFinishedDialog();
+            _showGameCompletedDialog();
           }
         });
       } else {
@@ -362,130 +401,256 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
     }
   }
 
-  void _showFinishedDialog() {
+  Future<void> _recordLevelCompleted({
+    required int starsEarned,
+    required int scoreEarned,
+  }) async {
+    if (widget.gameType == NatureGameType.animals) {
+      final updated = await _scoreRepository.recordAnimalsItemCompleted(
+        itemIndex: _currentIndex,
+        starsEarned: starsEarned,
+        scoreEarned: scoreEarned,
+        totalItems: _items.length,
+      );
+      if (mounted) {
+        setState(() {
+          _totalScore = updated.totalScore;
+          _totalStars = updated.totalStars;
+          _isGameCompleted = updated.isGameCompleted;
+        });
+        try {
+          context.read<ScoreCubit>().loadScores();
+        } catch (_) {}
+      }
+    } else {
+      final updated = await _scoreRepository.recordPlantsItemCompleted(
+        itemIndex: _currentIndex,
+        starsEarned: starsEarned,
+        scoreEarned: scoreEarned,
+        totalItems: _items.length,
+      );
+      if (mounted) {
+        setState(() {
+          _totalScore = updated.totalScore;
+          _totalStars = updated.totalStars;
+          _isGameCompleted = updated.isGameCompleted;
+        });
+        try {
+          context.read<ScoreCubit>().loadScores();
+        } catch (_) {}
+      }
+    }
+  }
+
+  void _showGameCompletedDialog() {
+    if (_isCompletedDialogShown) return;
+    _isCompletedDialogShown = true;
+    bool isDismissing = false;
+    final isAnimals = widget.gameType == NatureGameType.animals;
+    final themeColor = isAnimals ? const Color(0xFF0284C7) : const Color(0xFF15803D);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Container(
-            width: 360,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x35000000),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEF3C7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_rounded,
-                    color: Color(0xFFEA580C),
-                    size: 56,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Азаматсың!',
-                  style: TextStyle(
-                    fontFamily: GoogleFonts.nunito().fontFamily,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.gameType == NatureGameType.animals
-                      ? 'Бардык жаныбарларды ийгиликтүү таптың!'
-                      : 'Бардык өсүмдүктөрдү ийгиликтүү таптың!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: GoogleFonts.nunito().fontFamily,
-                    fontSize: 15,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Row(
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          foregroundColor: const Color(0xFF475569),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: themeColor.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.emoji_events_rounded,
+                        size: 68,
+                        color: themeColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Куттуктайбыз! 🎉',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isAnimals
+                          ? '«Жаныбарлар» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'
+                          : '«Өсүмдүктөр» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.star_rounded,
+                                iconColor: AppTheme.sunnyYellow,
+                                value: '$_totalStars',
+                                label: 'Жылдыздар',
+                              ),
+                            ),
                           ),
+                          Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.military_tech_rounded,
+                                iconColor: AppTheme.skyTurquoise,
+                                value: '$_totalScore',
+                                label: 'Жалпы упай',
+                              ),
+                            ),
+                          ),
+                          Container(width: 1, height: 36, color: const Color(0xFFE2E8F0)),
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: _buildStatItem(
+                                icon: Icons.task_alt_rounded,
+                                iconColor: themeColor,
+                                value: '${_items.length}/${_items.length}',
+                                label: 'Деңгээлдер',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isDismissing
+                            ? null
+                            : () {
+                                setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
+                                AudioController.instance.playButtonClick();
+                                Navigator.pop(dialogCtx);
+                                Navigator.pop(context);
+                              },
+                        icon: const Icon(Icons.home_rounded, size: 20),
+                        label: const Text(
+                          'Башкы бетке чыгуу',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () {
-                          Navigator.pop(dialogContext);
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          'Башкы бетке',
-                          style: TextStyle(
-                            fontFamily: GoogleFonts.nunito().fontFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEA580C),
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isDismissing
+                            ? null
+                            : () async {
+                                setDialogState(() => isDismissing = true);
+                                _isCompletedDialogShown = false;
+                                AudioController.instance.playButtonClick();
+                                Navigator.pop(dialogCtx);
+                                if (isAnimals) {
+                                  await _scoreRepository.saveAnimalsGameCompleted(false);
+                                  await _scoreRepository.saveAnimalsCurrentPosition(0);
+                                } else {
+                                  await _scoreRepository.savePlantsGameCompleted(false);
+                                  await _scoreRepository.savePlantsCurrentPosition(0);
+                                }
+                                if (!mounted) return;
+                                try {
+                                  context.read<ScoreCubit>().loadScores();
+                                } catch (_) {}
+                                setState(() {
+                                  _isGameCompleted = false;
+                                  _currentIndex = 0;
+                                  _loadCurrentItem();
+                                });
+                              },
+                        icon: const Icon(Icons.replay_rounded, size: 20),
+                        label: const Text(
+                          'Кайра ойноо (1-деңгээлден)',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () {
-                          Navigator.pop(dialogContext);
-                          setState(() {
-                            _currentIndex = 0;
-                            _loadCurrentItem();
-                          });
-                        },
-                        child: Text(
-                          'Кайра баштоо',
-                          style: TextStyle(
-                            fontFamily: GoogleFonts.nunito().fontFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: themeColor,
+                          side: BorderSide(color: themeColor.withValues(alpha: 0.5), width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required Color iconColor,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: iconColor, size: 28),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+      ],
     );
   }
 
@@ -496,6 +661,11 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
         _currentIndex = newIndex;
         _loadCurrentItem();
       });
+      if (widget.gameType == NatureGameType.animals) {
+        _scoreRepository.saveAnimalsCurrentPosition(newIndex);
+      } else {
+        _scoreRepository.savePlantsCurrentPosition(newIndex);
+      }
     }
   }
 
@@ -564,15 +734,30 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        title: Text(
-          isAnimals ? 'Жаныбарлар' : 'Өсүмдүктөр',
-          style: TextStyle(
-            fontFamily: GoogleFonts.nunito().fontFamily,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF1E293B),
-            fontSize: 20,
-          ),
+        centerTitle: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isAnimals ? 'Жаныбарлар' : 'Өсүмдүктөр',
+              style: TextStyle(
+                fontFamily: GoogleFonts.nunito().fontFamily,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+                fontSize: 16,
+              ),
+            ),
+            Text(
+              '${_currentIndex + 1}/${_items.length}-деңгээл',
+              style: TextStyle(
+                fontFamily: GoogleFonts.nunito().fontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: themeColor,
+              ),
+            ),
+          ],
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 22),
@@ -582,6 +767,43 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
           },
         ),
         actions: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: themeColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded, size: 18, color: themeColor),
+                const SizedBox(width: 4),
+                Text(
+                  '$_totalStars',
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.nunito().fontFamily,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: themeColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.military_tech_rounded, size: 18, color: AppTheme.skyTurquoise),
+                const SizedBox(width: 2),
+                Text(
+                  '$_totalScore',
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.nunito().fontFamily,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: AppTheme.skyTurquoise,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
           _CircleHintButton(
             key: const ValueKey('hint_button_appbar'),
             hintsRemaining: _hintsRemaining,
@@ -589,7 +811,7 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
             onTap: _useHint,
             size: 38,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Color(0xFFEA580C), size: 24),
             tooltip: 'Тазалоо',
@@ -605,7 +827,7 @@ class _NatureSpellingScreenState extends State<NatureSpellingScreen> {
               });
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: SafeArea(

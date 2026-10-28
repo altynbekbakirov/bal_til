@@ -5,6 +5,7 @@ import 'package:bal_til/core/score/score_cubit.dart';
 import 'package:bal_til/features/word_connect/cubit/word_connect_cubit.dart';
 import 'package:bal_til/features/word_search/cubit/word_search_cubit.dart';
 import 'package:bal_til/data/models/models.dart';
+import 'package:bal_til/data/models/score_models.dart';
 
 import 'package:flutter/services.dart';
 import 'package:bal_til/core/audio/audio_controller.dart';
@@ -276,6 +277,262 @@ void main() {
       final pos = await repo.getWordSearchProgress();
       expect(pos.categoryIndex, 0);
       expect(pos.levelIndex, 0);
+    });
+
+    test('WordSearch and WordConnect share same score and stars logic', () async {
+      final repo = ScoreRepository();
+
+      // Word Connect level 1 (4 words, 0 hints -> 3 stars, 70 score)
+      await repo.recordWordConnectLevelCompleted(
+        packIndex: 0,
+        levelIndex: 0,
+        starsEarned: 3,
+        scoreEarned: 70,
+        maxLevelsInPack: 5,
+        maxPacks: 2,
+      );
+
+      // Word Search level 1 (4 words, 3 stars -> 70 score)
+      await repo.recordWordSearchLevelCompleted(
+        categoryIndex: 0,
+        levelIndex: 0,
+        wordsFoundCount: 4,
+        scoreEarned: 70,
+        starsEarned: 3,
+        maxLevelsInCategory: 10,
+        maxCategories: 3,
+      );
+
+      final wc = await repo.getWordConnectProgress();
+      final ws = await repo.getWordSearchProgress();
+      expect(wc.totalStars, 3);
+      expect(wc.totalScore, 70);
+      expect(ws.totalStars, 3);
+      expect(ws.totalScore, 70);
+
+      final overall = await repo.getOverallScore();
+      expect(overall.totalStars, 6); // Stars from both games combined!
+      expect(overall.totalScore, 140);
+      expect(overall.wordConnectCompleted, 1);
+      expect(overall.wordSearchCompleted, 1);
+    });
+
+    test('WordSearch completing last level marks game as completed without resetting scores', () async {
+      final repo = ScoreRepository();
+
+      // Complete all 30 levels
+      for (int cat = 0; cat < 3; cat++) {
+        for (int lvl = 0; lvl < 10; lvl++) {
+          await repo.recordWordSearchLevelCompleted(
+            categoryIndex: cat,
+            levelIndex: lvl,
+            wordsFoundCount: 4,
+            scoreEarned: 70,
+            starsEarned: 3,
+            maxLevelsInCategory: 10,
+            maxCategories: 3,
+          );
+        }
+      }
+
+      final progress = await repo.getWordSearchProgress();
+      expect(progress.isGameCompleted, true);
+      expect(progress.levelsCompleted, 30);
+      expect(progress.totalStars, 90);
+      expect(progress.totalScore, 2100);
+
+      // Reopening completed game in cubit preserves scores and marks completed
+      final cubit = WordSearchCubit();
+      await cubit.loadGame();
+      expect(cubit.state is WordSearchPlaying, true);
+      final s = cubit.state as WordSearchPlaying;
+      expect(s.isCompleted, true);
+      expect(s.isGameCompleted, true);
+      expect(s.totalScore, 2100); // Scores NOT reset on reopen!
+      expect(s.totalStars, 90);
+      expect(s.currentOverallLevel, 30);
+
+      // Only user himself resets game
+      await cubit.restartGame();
+      final afterRestart = cubit.state as WordSearchPlaying;
+      expect(afterRestart.isCompleted, false);
+      expect(afterRestart.isGameCompleted, false);
+      expect(afterRestart.categoryIndex, 0);
+      expect(afterRestart.levelIndex, 0);
+      expect(afterRestart.currentOverallLevel, 1);
+      expect(afterRestart.totalScore, 2100); // Cumulative score preserved
+    });
+
+    test('WordConnect completing last level marks game as completed without resetting scores', () async {
+      final repo = ScoreRepository();
+
+      // Complete all 34 levels
+      await repo.recordWordConnectLevelCompleted(
+        packIndex: 2,
+        levelIndex: 9,
+        starsEarned: 3,
+        scoreEarned: 70,
+        maxLevelsInPack: 10,
+        maxPacks: 3,
+      );
+      await repo.saveWordConnectGameCompleted(true);
+
+      final progress = await repo.getWordConnectProgress();
+      expect(progress.isGameCompleted, true);
+
+      // Reopening completed game in cubit preserves scores and marks completed
+      final cubit = WordConnectCubit();
+      await cubit.loadGame();
+      expect(cubit.state is WordConnectPlaying, true);
+      final s = cubit.state as WordConnectPlaying;
+      expect(s.isCompleted, true);
+      expect(s.totalScore, 70); // Scores NOT reset on reopen!
+      expect(s.totalStars, 3);
+
+      // Only user himself resets game
+      await cubit.restartGame();
+      final afterRestart = cubit.state as WordConnectPlaying;
+      expect(afterRestart.isCompleted, false);
+      expect(afterRestart.packIndex, 0);
+      expect(afterRestart.levelIndex, 0);
+    });
+
+    test('Animals item completion records stars and scores, advances index, and marks completion', () async {
+      final repo = ScoreRepository();
+
+      final item1 = await repo.recordAnimalsItemCompleted(
+        itemIndex: 0,
+        starsEarned: 3,
+        scoreEarned: 80,
+        totalItems: 13,
+      );
+
+      expect(item1.currentIndex, 1);
+      expect(item1.totalScore, 80);
+      expect(item1.totalStars, 3);
+      expect(item1.itemsCompleted, 1);
+      expect(item1.isGameCompleted, false);
+
+      // Complete all remaining 12 items
+      AnimalsProgress lastItem = item1;
+      for (int i = 1; i < 13; i++) {
+        lastItem = await repo.recordAnimalsItemCompleted(
+          itemIndex: i,
+          starsEarned: 3,
+          scoreEarned: 80,
+          totalItems: 13,
+        );
+      }
+
+      expect(lastItem.itemsCompleted, 13);
+      expect(lastItem.totalStars, 39);
+      expect(lastItem.totalScore, 1040);
+      expect(lastItem.isGameCompleted, true);
+
+      final saved = await repo.getAnimalsProgress();
+      expect(saved.isGameCompleted, true);
+      expect(saved.totalScore, 1040);
+      expect(saved.totalStars, 39);
+    });
+
+    test('Plants item completion records stars and scores, advances index, and marks completion', () async {
+      final repo = ScoreRepository();
+
+      final item1 = await repo.recordPlantsItemCompleted(
+        itemIndex: 0,
+        starsEarned: 2,
+        scoreEarned: 60,
+        totalItems: 9,
+      );
+
+      expect(item1.currentIndex, 1);
+      expect(item1.totalScore, 60);
+      expect(item1.totalStars, 2);
+      expect(item1.itemsCompleted, 1);
+      expect(item1.isGameCompleted, false);
+
+      // Complete all items
+      PlantsProgress lastItem = item1;
+      for (int i = 1; i < 9; i++) {
+        lastItem = await repo.recordPlantsItemCompleted(
+          itemIndex: i,
+          starsEarned: 3,
+          scoreEarned: 80,
+          totalItems: 9,
+        );
+      }
+
+      expect(lastItem.itemsCompleted, 9);
+      expect(lastItem.totalStars, 26);
+      expect(lastItem.totalScore, 700);
+      expect(lastItem.isGameCompleted, true);
+
+      final saved = await repo.getPlantsProgress();
+      expect(saved.isGameCompleted, true);
+    });
+
+    test('OverallScore sums scores, stars, and completed counts across all 4 games', () async {
+      final repo = ScoreRepository();
+
+      // Game 1: Word Connect
+      await repo.recordWordConnectLevelCompleted(
+        packIndex: 0,
+        levelIndex: 0,
+        starsEarned: 3,
+        scoreEarned: 70,
+        maxLevelsInPack: 5,
+        maxPacks: 2,
+      );
+
+      // Game 2: Word Search
+      await repo.recordWordSearchLevelCompleted(
+        categoryIndex: 0,
+        levelIndex: 0,
+        wordsFoundCount: 4,
+        scoreEarned: 70,
+        starsEarned: 3,
+        maxLevelsInCategory: 10,
+        maxCategories: 3,
+      );
+
+      // Game 3: Animals
+      await repo.recordAnimalsItemCompleted(
+        itemIndex: 0,
+        starsEarned: 3,
+        scoreEarned: 80,
+        totalItems: 9,
+      );
+
+      // Game 4: Plants
+      await repo.recordPlantsItemCompleted(
+        itemIndex: 0,
+        starsEarned: 2,
+        scoreEarned: 60,
+        totalItems: 9,
+      );
+
+      final overall = await repo.getOverallScore();
+      expect(overall.totalScore, 70 + 70 + 80 + 60); // 280
+      expect(overall.totalStars, 3 + 3 + 3 + 2); // 11
+      expect(overall.wordConnectCompleted, 1);
+      expect(overall.wordSearchCompleted, 1);
+      expect(overall.animalsCompleted, 1);
+      expect(overall.plantsCompleted, 1);
+
+      // ScoreCubit loadScores
+      final cubit = ScoreCubit(repository: repo);
+      await cubit.loadScores();
+      expect(cubit.state.overall.totalScore, 280);
+      expect(cubit.state.overall.totalStars, 11);
+      expect(cubit.state.animals.totalScore, 80);
+      expect(cubit.state.plants.totalScore, 60);
+
+      // Reset all clears all 4 games
+      await cubit.resetAll();
+      expect(cubit.state.overall.totalScore, 0);
+      expect(cubit.state.overall.totalStars, 0);
+      expect(cubit.state.animals.totalScore, 0);
+      expect(cubit.state.plants.totalScore, 0);
     });
   });
 

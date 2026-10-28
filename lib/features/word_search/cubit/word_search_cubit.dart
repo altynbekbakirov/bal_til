@@ -43,8 +43,12 @@ class WordSearchPlaying extends WordSearchState {
   final String categoryName;
   final int totalCategories;
   final bool isCompleted;
+  final bool isGameCompleted;
+  final int starsEarned;
+  final int levelScore;
   final int scoreEarned;
   final int totalScore;
+  final int totalStars;
   final int categoriesCompleted;
 
   WordSearchPlaying({
@@ -54,8 +58,12 @@ class WordSearchPlaying extends WordSearchState {
     required this.categoryName,
     this.totalCategories = 3,
     this.isCompleted = false,
+    this.isGameCompleted = false,
+    this.starsEarned = 0,
+    this.levelScore = 0,
     this.scoreEarned = 0,
     this.totalScore = 0,
+    this.totalStars = 0,
     this.categoriesCompleted = 0,
   });
 
@@ -70,8 +78,12 @@ class WordSearchPlaying extends WordSearchState {
     String? categoryName,
     int? totalCategories,
     bool? isCompleted,
+    bool? isGameCompleted,
+    int? starsEarned,
+    int? levelScore,
     int? scoreEarned,
     int? totalScore,
+    int? totalStars,
     int? categoriesCompleted,
   }) {
     return WordSearchPlaying(
@@ -81,8 +93,12 @@ class WordSearchPlaying extends WordSearchState {
       categoryName: categoryName ?? this.categoryName,
       totalCategories: totalCategories ?? this.totalCategories,
       isCompleted: isCompleted ?? this.isCompleted,
+      isGameCompleted: isGameCompleted ?? this.isGameCompleted,
+      starsEarned: starsEarned ?? this.starsEarned,
+      levelScore: levelScore ?? this.levelScore,
       scoreEarned: scoreEarned ?? this.scoreEarned,
       totalScore: totalScore ?? this.totalScore,
+      totalStars: totalStars ?? this.totalStars,
       categoriesCompleted: categoriesCompleted ?? this.categoriesCompleted,
     );
   }
@@ -98,6 +114,7 @@ class WordSearchCubit extends Cubit<WordSearchState> {
   final ScoreRepository _scoreRepository = ScoreRepository();
   List<WordGame2Category> _categories = [];
   int _totalScore = 0;
+  int _totalStars = 0;
   int _categoriesCompleted = 0;
 
   WordSearchCubit() : super(WordSearchLoading());
@@ -112,25 +129,49 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       }
       final progress = await _scoreRepository.getWordSearchProgress();
       _totalScore = progress.totalScore;
-      _categoriesCompleted = progress.categoriesCompleted;
+      _totalStars = progress.totalStars;
+      _categoriesCompleted = progress.levelsCompleted;
 
       int catIdx = progress.categoryIndex;
       int lvlIdx = progress.levelIndex;
 
-      if (catIdx >= _categories.length) {
-        catIdx = 0;
-        lvlIdx = 0;
-      } else if (lvlIdx >= WordSearchPlaying.levelsPerCategory) {
-        lvlIdx = 0;
+      if (progress.isGameCompleted) {
+        catIdx = _categories.length - 1;
+        lvlIdx = WordSearchPlaying.levelsPerCategory - 1;
+      } else {
+        if (catIdx >= _categories.length) {
+          catIdx = 0;
+          lvlIdx = 0;
+        } else if (lvlIdx >= WordSearchPlaying.levelsPerCategory) {
+          lvlIdx = 0;
+        }
       }
 
-      _generateBoard(catIdx, lvlIdx);
+      _generateBoard(
+        catIdx,
+        lvlIdx,
+        isCompleted: progress.isGameCompleted,
+        isGameCompleted: progress.isGameCompleted,
+        totalScore: progress.totalScore,
+        totalStars: progress.totalStars,
+        categoriesCompleted: progress.levelsCompleted,
+      );
     } catch (e) {
       emit(WordSearchError('Оюнду жүктөөдө ката чыкты: $e'));
     }
   }
 
-  void _generateBoard(int categoryIndex, int levelIndex) {
+  void _generateBoard(
+    int categoryIndex,
+    int levelIndex, {
+    bool isCompleted = false,
+    bool isGameCompleted = false,
+    int starsEarned = 0,
+    int levelScore = 0,
+    int? totalScore,
+    int? totalStars,
+    int? categoriesCompleted,
+  }) {
     const size = 6;
     final cat = _categories[categoryIndex];
     // Seeded Random for repeatable level generation
@@ -199,22 +240,28 @@ class WordSearchCubit extends Cubit<WordSearchState> {
         size: size,
         grid: grid,
         targetWords: targetWords,
-        foundWords: {},
+        foundWords: (isCompleted || isGameCompleted) ? Set<String>.from(targetWords) : {},
       ),
       categoryIndex: categoryIndex,
       levelIndex: levelIndex,
       categoryName: categoryTitle,
       totalCategories: _categories.length,
-      isCompleted: false,
-      scoreEarned: 0,
-      totalScore: _totalScore,
-      categoriesCompleted: _categoriesCompleted,
+      isCompleted: isCompleted || isGameCompleted,
+      isGameCompleted: isGameCompleted,
+      starsEarned: starsEarned,
+      levelScore: levelScore,
+      scoreEarned: levelScore,
+      totalScore: totalScore ?? _totalScore,
+      totalStars: totalStars ?? _totalStars,
+      categoriesCompleted: categoriesCompleted ?? _categoriesCompleted,
     ));
   }
 
   Future<void> submitSelectedWord(String word) async {
     if (state is! WordSearchPlaying) return;
     final s = state as WordSearchPlaying;
+    if (s.isCompleted) return;
+
     final candidate = word.toLowerCase().trim();
     final reversed = candidate.split('').reversed.join();
 
@@ -229,21 +276,28 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       final newFound = Set<String>.from(s.board.foundWords)..add(matched);
       final isAll = newFound.length >= s.board.targetWords.length;
 
-      int scoreEarned = 0;
+      int starsEarned = 0;
+      int levelScore = 0;
+      bool isGameCompleted = s.isGameCompleted;
+
       if (isAll) {
         AudioController.instance.playLevelComplete();
-        scoreEarned = (s.board.targetWords.length * 5) + 20;
+        starsEarned = 3;
+        levelScore = (s.board.targetWords.length * 10) + (starsEarned * 10);
 
         final updated = await _scoreRepository.recordWordSearchLevelCompleted(
           categoryIndex: s.categoryIndex,
           levelIndex: s.levelIndex,
           wordsFoundCount: s.board.targetWords.length,
-          scoreEarned: scoreEarned,
+          scoreEarned: levelScore,
+          starsEarned: starsEarned,
           maxLevelsInCategory: WordSearchPlaying.levelsPerCategory,
           maxCategories: _categories.length,
         );
         _totalScore = updated.totalScore;
-        _categoriesCompleted = updated.categoriesCompleted;
+        _totalStars = updated.totalStars;
+        _categoriesCompleted = updated.levelsCompleted;
+        isGameCompleted = updated.isGameCompleted;
       } else {
         AudioController.instance.playWordSolved();
       }
@@ -251,8 +305,12 @@ class WordSearchCubit extends Cubit<WordSearchState> {
       emit(s.copyWith(
         board: s.board.copyWith(foundWords: newFound),
         isCompleted: isAll,
-        scoreEarned: scoreEarned,
+        isGameCompleted: isGameCompleted,
+        starsEarned: starsEarned,
+        levelScore: levelScore,
+        scoreEarned: levelScore,
         totalScore: _totalScore,
+        totalStars: _totalStars,
         categoriesCompleted: _categoriesCompleted,
       ));
     } else {
@@ -267,7 +325,12 @@ class WordSearchCubit extends Cubit<WordSearchState> {
     int nextCategoryIdx = s.categoryIndex;
 
     if (nextLevelIdx >= WordSearchPlaying.levelsPerCategory) {
-      nextCategoryIdx = _categories.isNotEmpty ? (s.categoryIndex + 1) % _categories.length : 0;
+      nextCategoryIdx++;
+      nextLevelIdx = 0;
+    }
+
+    if (nextCategoryIdx >= _categories.length) {
+      nextCategoryIdx = 0;
       nextLevelIdx = 0;
     }
 
@@ -281,6 +344,8 @@ class WordSearchCubit extends Cubit<WordSearchState> {
   Future<void> restartGame() async {
     if (state is! WordSearchPlaying) return;
     await _scoreRepository.saveWordSearchCurrentPosition(0, 0);
-    _generateBoard(0, 0);
+    await _scoreRepository.saveWordSearchGameCompleted(false);
+    _generateBoard(0, 0, isCompleted: false, isGameCompleted: false);
   }
 }
+

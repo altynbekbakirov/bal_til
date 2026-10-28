@@ -4,18 +4,25 @@ import '../models/models.dart';
 import '../../core/utils/asset_paths.dart';
 
 class NatureRepository {
+  static List<AnimalModel>? _cachedAnimals;
+  static List<PlantModel>? _cachedPlants;
+
   Future<List<AnimalModel>> loadAnimals() async {
+    if (_cachedAnimals != null) return _cachedAnimals!;
     final jsonString = await rootBundle.loadString(AssetPaths.animalsJson);
     final data = json.decode(jsonString) as Map<String, dynamic>;
     final items = data['Items'] as List<dynamic>? ?? [];
-    return items.map((e) => AnimalModel.fromJson(e as Map<String, dynamic>)).toList();
+    _cachedAnimals = items.map((e) => AnimalModel.fromJson(e as Map<String, dynamic>)).toList();
+    return _cachedAnimals!;
   }
 
   Future<List<PlantModel>> loadPlants() async {
+    if (_cachedPlants != null) return _cachedPlants!;
     final jsonString = await rootBundle.loadString(AssetPaths.plantsJson);
     final data = json.decode(jsonString) as Map<String, dynamic>;
     final items = data['Items'] as List<dynamic>? ?? [];
-    return items.map((e) => PlantModel.fromJson(e as Map<String, dynamic>)).toList();
+    _cachedPlants = items.map((e) => PlantModel.fromJson(e as Map<String, dynamic>)).toList();
+    return _cachedPlants!;
   }
 }
 
@@ -98,7 +105,11 @@ class MapRepository {
 }
 
 class WordGameRepository {
+  static List<WordGame1Pack>? _cachedWordGame1Packs;
+  static List<WordGame2Category>? _cachedWordGame2Categories;
+
   Future<List<WordGame1Pack>> loadWordGame1Packs() async {
+    if (_cachedWordGame1Packs != null) return _cachedWordGame1Packs!;
     final jsonString = await rootBundle.loadString(AssetPaths.wordGame1Json);
     final data = json.decode(jsonString) as Map<String, dynamic>;
     final items = data['Items'] as List<dynamic>? ?? [];
@@ -109,14 +120,17 @@ class WordGameRepository {
         packs.add(WordGame1Pack.fromJson(p as Map<String, dynamic>));
       }
     }
-    return packs;
+    _cachedWordGame1Packs = packs;
+    return _cachedWordGame1Packs!;
   }
 
   Future<List<WordGame2Category>> loadWordGame2Categories() async {
+    if (_cachedWordGame2Categories != null) return _cachedWordGame2Categories!;
     final jsonString = await rootBundle.loadString(AssetPaths.wordGame2Json);
     final data = json.decode(jsonString) as Map<String, dynamic>;
     final items = data['Items'] as List<dynamic>? ?? [];
-    return items.map((e) => WordGame2Category.fromJson(e as Map<String, dynamic>)).toList();
+    _cachedWordGame2Categories = items.map((e) => WordGame2Category.fromJson(e as Map<String, dynamic>)).toList();
+    return _cachedWordGame2Categories!;
   }
 }
 

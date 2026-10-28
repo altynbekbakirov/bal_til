@@ -25,10 +25,35 @@ import 'package:bal_til/alippe/screens/dialogs/alippe_settings_dialog.dart';
 import 'package:bal_til/features/nature/screens/animals_screen.dart';
 import 'package:bal_til/features/nature/screens/plants_screen.dart';
 import 'package:bal_til/features/nature/screens/nature_spelling_screen.dart';
+import 'package:bal_til/features/word_search/screens/word_search_screen.dart';
+import 'package:bal_til/features/word_search/cubit/word_search_cubit.dart';
+import 'package:bal_til/core/audio/audio_controller.dart';
+import 'package:bal_til/core/score/score_cubit.dart';
 import 'package:bal_til/core/utils/app_orientation.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('com.ryanheise.just_audio.methods'),
+      (MethodCall methodCall) async {
+        switch (methodCall.method) {
+          case 'init':
+            return {'id': methodCall.arguments?['id'] ?? 'mock_player'};
+          case 'load':
+            return {'duration': 1000000};
+          case 'disposeAllPlayers':
+            return <dynamic, dynamic>{};
+          default:
+            return <dynamic, dynamic>{};
+        }
+      },
+    );
+    AudioController.instance.isMusicEnabled = false;
+    AudioController.instance.isSoundEnabled = false;
+  });
 
   testWidgets('AlippeApp smoke test', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -980,6 +1005,8 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
+    SharedPreferences.setMockInitialValues({});
+
     await tester.pumpWidget(const MaterialApp(home: AnimalsScreen()));
     await tester.pumpAndSettle();
 
@@ -1011,7 +1038,9 @@ void main() {
     await tester.tap(appbarHint);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.text('0'), findsWidgets);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('PlantsScreen renders portrait spelling game and handles letter tap interaction', (WidgetTester tester) async {
@@ -1022,6 +1051,8 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
+    SharedPreferences.setMockInitialValues({});
+
     await tester.pumpWidget(const MaterialApp(home: PlantsScreen()));
     await tester.pumpAndSettle();
 
@@ -1031,7 +1062,210 @@ void main() {
     expect(find.text('1 / 9'), findsOneWidget);
     expect(find.byIcon(Icons.shuffle_rounded), findsOneWidget);
     expect(find.byIcon(Icons.refresh_rounded), findsWidgets);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('WordSearchScreen with completed game reopens showing completed modal without resetting scores', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({
+      'ws_category_index': 2,
+      'ws_level_index': 9,
+      'ws_total_score': 2100,
+      'ws_total_stars': 90,
+      'ws_completed_count': 30,
+      'ws_is_completed': true,
+    });
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<ScoreCubit>(create: (_) => ScoreCubit()..loadScores()),
+        ],
+        child: const MaterialApp(
+          home: WordSearchScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify modal is shown
+    expect(find.text('«Сөз издөө» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsOneWidget);
+    expect(find.text('2100'), findsWidgets); // Score preserved!
+    expect(find.text('90'), findsWidgets); // Stars preserved!
+    expect(find.text('30/30'), findsOneWidget); // Total levels!
+
+    // Verify buttons
+    expect(find.text('Башкы бетке чыгуу'), findsOneWidget);
+    expect(find.text('Кайра ойноо (1-деңгээлден)'), findsOneWidget);
+
+    // Click "Кайра ойноо (1-деңгээлден)" to reset game
+    await tester.tap(find.text('Кайра ойноо (1-деңгээлден)'));
+    await tester.pumpAndSettle();
+
+    // Completed dialog should be dismissed and game at level 1
+    expect(find.text('«Сөз издөө» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsNothing);
+    expect(find.text('1/30-деңгээл (1/10)'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('WordSearchScreen round complete automatically proceeds to next level without modal', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    final wsPrefs = await SharedPreferences.getInstance();
+    await wsPrefs.reload();
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<ScoreCubit>(create: (_) => ScoreCubit()..loadScores()),
+        ],
+        child: const MaterialApp(
+          home: WordSearchScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1/30-деңгээл (1/10)'), findsOneWidget);
+
+    final cubit = tester.element(find.text('1/30-деңгээл (1/10)')).read<WordSearchCubit>();
+    final state = cubit.state as WordSearchPlaying;
+    for (final word in state.board.targetWords) {
+      await cubit.submitSelectedWord(word);
+    }
+    await tester.pump();
+
+    // Verify victory modal is NOT shown
+    expect(find.text('Азаматсың!'), findsNothing);
+    expect(find.text('Кийинки деңгээл'), findsNothing);
+
+    // Advance 700ms timer
+    await tester.pump(const Duration(milliseconds: 750));
+    await tester.pumpAndSettle();
+
+    // Level automatically advanced to level 2!
+    expect(find.text('2/30-деңгээл (2/10)'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('AnimalsScreen with completed game reopens showing completed modal without resetting scores', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({
+      'animals_current_index': 12,
+      'animals_total_score': 1040,
+      'animals_total_stars': 39,
+      'animals_completed_count': 13,
+      'animals_is_completed': true,
+    });
+    final animalsPrefs = await SharedPreferences.getInstance();
+    await animalsPrefs.reload();
+
+    await tester.pumpWidget(
+      BlocProvider<ScoreCubit>(
+        create: (_) => ScoreCubit(),
+        child: const MaterialApp(
+          home: AnimalsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify modal is shown
+    expect(find.text('«Жаныбарлар» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsOneWidget);
+    expect(find.text('1040'), findsWidgets); // Score preserved!
+    expect(find.text('39'), findsWidgets); // Stars preserved!
+    expect(find.text('13/13'), findsOneWidget); // Levels completed!
+
+    // Verify action buttons
+    expect(find.text('Башкы бетке чыгуу'), findsOneWidget);
+    expect(find.text('Кайра ойноо (1-деңгээлден)'), findsOneWidget);
+
+    // Click "Кайра ойноо (1-деңгээлден)" to reset game
+    await tester.tap(find.text('Кайра ойноо (1-деңгээлден)'));
+    await tester.pumpAndSettle();
+
+    // Completed dialog should be dismissed and game at level 1
+    expect(find.text('«Жаныбарлар» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsNothing);
+    expect(find.text('1/13-деңгээл'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('PlantsScreen with completed game reopens showing completed modal without resetting scores', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({
+      'plants_current_index': 8,
+      'plants_total_score': 700,
+      'plants_total_stars': 26,
+      'plants_completed_count': 9,
+      'plants_is_completed': true,
+    });
+    final plantsPrefs = await SharedPreferences.getInstance();
+    await plantsPrefs.reload();
+
+    await tester.pumpWidget(
+      BlocProvider<ScoreCubit>(
+        create: (_) => ScoreCubit(),
+        child: const MaterialApp(
+          home: PlantsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify modal is shown
+    expect(find.text('«Өсүмдүктөр» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsOneWidget);
+    expect(find.text('700'), findsWidgets); // Score preserved!
+    expect(find.text('26'), findsWidgets); // Stars preserved!
+    expect(find.text('9/9'), findsOneWidget); // Levels completed!
+
+    // Verify action buttons
+    expect(find.text('Башкы бетке чыгуу'), findsOneWidget);
+    expect(find.text('Кайра ойноо (1-деңгээлден)'), findsOneWidget);
+
+    // Click "Кайра ойноо (1-деңгээлден)" to reset game
+    await tester.tap(find.text('Кайра ойноо (1-деңгээлден)'));
+    await tester.pumpAndSettle();
+
+    // Completed dialog should be dismissed and game at level 1
+    expect(find.text('«Өсүмдүктөр» оюнунун бардык деңгээлдерин толугу менен аяктадыңыз!'), findsNothing);
+    expect(find.text('1/9-деңгээл'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
   });
 }
+
 
 

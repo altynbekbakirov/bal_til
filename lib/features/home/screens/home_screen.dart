@@ -273,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${state.overall.wordConnectCompleted + state.overall.wordSearchCompleted}',
+                                        '${state.overall.wordConnectCompleted + state.overall.wordSearchCompleted + state.overall.animalsCompleted + state.overall.plantsCompleted}',
                                         style: const TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.bold,
@@ -335,20 +335,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   MenuCardButton(
                     title: 'Жаныбарлар',
-                    subtitle: 'Кыргызстандын жапайы жана үй жаныбарлары',
+                    subtitle: 'Кыргызстандын жапайы жана үй жаныбарлары • 13 деңгээл',
                     imageAsset: 'assets/alippe/images/books/book3/icon.png',
                     primaryColor: const Color(0xFF0EA5E9),
                     secondaryColor: const Color(0xFF0284C7),
-                    onTap: () => Navigator.pushNamed(context, Routers.animals),
+                    onTap: () async {
+                      await Navigator.pushNamed(context, Routers.animals);
+                      if (context.mounted) {
+                        context.read<ScoreCubit>().loadScores();
+                      }
+                    },
                   ).animate().fadeIn(delay: 160.ms, duration: 400.ms).slideY(begin: 0.1, duration: 400.ms),
                   const SizedBox(height: 16),
                   MenuCardButton(
                     title: 'Өсүмдүктөр',
-                    subtitle: 'Тоо гүлдөрү, дары чөптөр жана мөмөлөр',
+                    subtitle: 'Тоо гүлдөрү, дары чөптөр жана мөмөлөр • 9 деңгээл',
                     imageAsset: 'assets/alippe/images/books/book4/icon.png',
                     primaryColor: const Color(0xFF84CC16),
                     secondaryColor: const Color(0xFF65A30D),
-                    onTap: () => Navigator.pushNamed(context, Routers.plants),
+                    onTap: () async {
+                      await Navigator.pushNamed(context, Routers.plants);
+                      if (context.mounted) {
+                        context.read<ScoreCubit>().loadScores();
+                      }
+                    },
                   ).animate().fadeIn(delay: 240.ms, duration: 400.ms).slideY(begin: 0.1, duration: 400.ms),
                   const SizedBox(height: 16),
                   MenuCardButton(
