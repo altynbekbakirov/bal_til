@@ -146,15 +146,7 @@ class _WordSearchViewState extends State<_WordSearchView> {
               if (state.currentOverallLevel >= state.totalLevels || state.isGameCompleted) {
                 _showGameCompletedDialog(context, state);
               } else {
-                final wsCubit = context.read<WordSearchCubit>();
-                Future.delayed(const Duration(milliseconds: 700), () {
-                  if (!mounted) return;
-                  wsCubit.nextLevel();
-                  if (!context.mounted) return;
-                  try {
-                    context.read<ScoreCubit>().loadScores();
-                  } catch (_) {}
-                });
+                _showVictoryDialog(context, state);
               }
             });
           }
@@ -302,6 +294,94 @@ class _WordSearchViewState extends State<_WordSearchView> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showVictoryDialog(BuildContext context, WordSearchPlaying state) {
+    bool isDismissing = false;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(3, (i) {
+                        final isEarned = i < state.starsEarned;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            isEarned ? Icons.star_rounded : Icons.star_outline_rounded,
+                            size: 46,
+                            color: isEarned ? AppTheme.sunnyYellow : const Color(0xFFCBD5E1),
+                          ),
+                        );
+                      }),
+                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Азаматсың!',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '+${state.scoreEarned} упай топтолду!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.emeraldGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${state.currentOverallLevel}/${state.totalLevels}-деңгээл ийгиликтүү бүттү!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: isDismissing
+                          ? null
+                          : () {
+                              setDialogState(() => isDismissing = true);
+                              AudioController.instance.playButtonClick();
+                              Navigator.pop(dialogCtx);
+                              context.read<WordSearchCubit>().nextLevel();
+                              try {
+                                context.read<ScoreCubit>().loadScores();
+                              } catch (_) {}
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.emeraldGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text(
+                        'Кийинки деңгээл',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

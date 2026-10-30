@@ -1118,7 +1118,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('WordSearchScreen round complete automatically proceeds to next level without modal', (WidgetTester tester) async {
+  testWidgets('WordSearchScreen round complete shows confirmation modal and proceeds on tap', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -1150,13 +1150,14 @@ void main() {
       await cubit.submitSelectedWord(word);
     }
     await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Verify victory modal is NOT shown
-    expect(find.text('Азаматсың!'), findsNothing);
-    expect(find.text('Кийинки деңгээл'), findsNothing);
+    // Verify victory modal IS shown
+    expect(find.text('Азаматсың!'), findsOneWidget);
+    expect(find.text('Кийинки деңгээл'), findsOneWidget);
 
-    // Advance 700ms timer
-    await tester.pump(const Duration(milliseconds: 750));
+    // Tap "Кийинки деңгээл"
+    await tester.tap(find.text('Кийинки деңгээл'));
     await tester.pumpAndSettle();
 
     // Level automatically advanced to level 2!
