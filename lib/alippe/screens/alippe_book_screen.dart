@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../core/alippe_cubit.dart';
 import '../data/alippe_data.dart';
 import '../widgets/alippe_anim_button.dart';
 import '../widgets/alippe_book_base.dart';
@@ -12,6 +14,19 @@ class AlippeBookScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final book = AlippeData.books[bookId.clamp(0, 5)];
+    final scores = context.watch<AlippeCubit>().state.scores;
+    final isUnlocked = (book.bookId == 0) ||
+        (book.bookId < scores.length &&
+            (scores[book.bookId - 1] >= 3 || scores[book.bookId] > 0));
+
+    if (!isUnlocked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      });
+      return const SizedBox.shrink();
+    }
 
     return AlippeContainer(
       child: AlippeBookBase(

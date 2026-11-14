@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../configs/routes.dart';
 import '../../core/audio/audio_controller.dart';
+import '../../core/services/common_services.dart';
 import '../../core/utils/app_orientation.dart';
 import '../core/alippe_audio.dart';
 import '../core/alippe_constants.dart';
@@ -38,12 +39,50 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
     });
   }
 
+  static const ColorFilter _grayscaleFilter = ColorFilter.matrix(<double>[
+    0.2126, 0.7152, 0.0722, 0, 0,
+    0.2126, 0.7152, 0.0722, 0, 0,
+    0.2126, 0.7152, 0.0722, 0, 0,
+    0,      0,      0,      1, 0,
+  ]);
+
   @override
   void dispose() {
+    ExitNotificationOverlay.hide();
     // When leaving Alippe, restore portrait mode and standard UI overlay
     AppOrientation.forcePortrait();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  bool _isBookUnlocked(int bookId, List<int> scores) {
+    if (bookId == 0) return true;
+    if (bookId > 0 && bookId < scores.length) {
+      return scores[bookId - 1] >= 3 || scores[bookId] > 0;
+    }
+    return false;
+  }
+
+  int _getBookIdForSection(int sectionId) {
+    if (sectionId <= 1) return 0;
+    if (sectionId <= 3) return 1;
+    if (sectionId <= 5) return 2;
+    if (sectionId <= 7) return 3;
+    if (sectionId <= 9) return 4;
+    return 5;
+  }
+
+  int _getValidSection(int lastSec, List<int> scores) {
+    final bookId = _getBookIdForSection(lastSec);
+    if (_isBookUnlocked(bookId, scores)) {
+      return lastSec;
+    }
+    for (int b = 5; b >= 0; b--) {
+      if (_isBookUnlocked(b, scores)) {
+        return AlippeData.books[b].section1Id;
+      }
+    }
+    return 0;
   }
 
   Widget _buildStars(int score) {
@@ -143,8 +182,8 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
                   onSettings: () => AlippeSettingsDialog.show(context),
                   onBack: () => _exitAlippe(context),
                   onPlay: () {
-                    final lastSec = state.lastSection;
-                    Navigator.of(context).pushNamed('/section', arguments: lastSec);
+                    final targetSec = _getValidSection(state.lastSection, state.scores);
+                    Navigator.of(context).pushNamed('/section', arguments: targetSec);
                   },
                 ),
 
@@ -158,9 +197,24 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
                       Expanded(
                         child: Row(
                           children: [
-                            _buildBookItem(context, AlippeData.books[0], state.scores[0]),
-                            _buildBookItem(context, AlippeData.books[1], state.scores[1]),
-                            _buildBookItem(context, AlippeData.books[2], state.scores[2]),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[0],
+                              state.scores[0],
+                              _isBookUnlocked(0, state.scores),
+                            ),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[1],
+                              state.scores[1],
+                              _isBookUnlocked(1, state.scores),
+                            ),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[2],
+                              state.scores[2],
+                              _isBookUnlocked(2, state.scores),
+                            ),
                           ],
                         ),
                       ),
@@ -169,9 +223,24 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
                       Expanded(
                         child: Row(
                           children: [
-                            _buildBookItem(context, AlippeData.books[3], state.scores[3]),
-                            _buildBookItem(context, AlippeData.books[4], state.scores[4]),
-                            _buildBookItem(context, AlippeData.books[5], state.scores[5]),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[3],
+                              state.scores[3],
+                              _isBookUnlocked(3, state.scores),
+                            ),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[4],
+                              state.scores[4],
+                              _isBookUnlocked(4, state.scores),
+                            ),
+                            _buildBookItem(
+                              context,
+                              AlippeData.books[5],
+                              state.scores[5],
+                              _isBookUnlocked(5, state.scores),
+                            ),
                           ],
                         ),
                       ),
@@ -187,34 +256,89 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
   );
 }
 
-  Widget _buildBookItem(BuildContext context, AlippeBookModel book, int score) {
+  Widget _buildBookItem(
+    BuildContext context,
+    AlippeBookModel book,
+    int score,
+    bool isUnlocked,
+  ) {
+    final bookIcon = Image.asset(
+      book.icon,
+      fit: BoxFit.contain,
+    );
+
+    Widget bookDisplay = Column(
+      children: [
+        // Stars on the top of the game card (flex 1)
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: _buildStars(score),
+          ),
+        ),
+        const SizedBox(height: 2),
+        // Book icon below the stars (flex 3)
+        Expanded(
+          flex: 3,
+          child: isUnlocked
+              ? bookIcon
+              : Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    bookIcon,
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.52),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white70, width: 1.5),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.lock_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+
+    if (!isUnlocked) {
+      bookDisplay = ColorFiltered(
+        colorFilter: _grayscaleFilter,
+        child: Opacity(
+          opacity: 0.65,
+          child: bookDisplay,
+        ),
+      );
+    }
+
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
         child: AlippeAnimButton(
-          scaleFactor: 1.2,
-          onPress: () => _onBookTap(context, book),
-          child: Column(
-            children: [
-              // Stars on the top of the game card (flex 1)
-              Expanded(
-                flex: 1,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: _buildStars(score),
-                ),
-              ),
-              const SizedBox(height: 2),
-              // Book icon below the stars (flex 3)
-              Expanded(
-                flex: 3,
-                child: Image.asset(
-                  book.icon,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ],
-          ),
+          scaleFactor: isUnlocked ? 1.2 : 1.04,
+          noTapSnd: !isUnlocked,
+          onPress: isUnlocked
+              ? () => _onBookTap(context, book)
+              : () {
+                  AlippeAudio().playFail();
+                  ExitNotificationOverlay.show(
+                    context,
+                    message: 'Адегенде мурунку бөлүмдү аяктаңыз!',
+                  );
+                },
+          child: bookDisplay,
         ),
       ),
     );
