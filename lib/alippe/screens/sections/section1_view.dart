@@ -116,6 +116,7 @@ class _Section1ViewState extends State<Section1View> {
             });
           } else {
             // Word game finished!
+            context.read<AlippeCubit>().completeSection(1);
             context.read<AlippeCubit>().addScore(0, 3);
             AlippeGameFinishDialog.show(
               context: context,

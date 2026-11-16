@@ -68,9 +68,10 @@ class _ExitToastWidget extends StatelessWidget {
       bottom: bottomPadding + 28,
       left: 20,
       right: 20,
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
+      child: IgnorePointer(
+        child: Center(
+          child: Material(
+            color: Colors.transparent,
           child: Container(
             constraints: const BoxConstraints(maxWidth: 420),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -138,7 +139,8 @@ class _ExitToastWidget extends StatelessWidget {
             .fadeIn(duration: 180.ms)
             .slideY(begin: 0.35, end: 0, duration: 240.ms, curve: Curves.easeOutBack),
       ),
-    );
+    ),
+  );
   }
 }
 

@@ -174,11 +174,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 6 book items + 3 sidebar items (settings, back, play) = 9 AlippeAnimButton items
+    // 6 book items + 3 nav items (settings, back, right autoplay) = 9 AlippeAnimButton items
     expect(find.byType(AlippeAnimButton), findsNWidgets(9));
 
-    // Tap first book item
-    await tester.tap(find.byType(AlippeAnimButton).at(3));
+    // Tap first book item (Book 0)
+    await tester.tap(find.byKey(const Key('alippe_book_0')));
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pumpAndSettle();
@@ -501,6 +501,24 @@ void main() {
     expect(find.text('Бал тил 2'), findsOneWidget);
   });
 
+  testWidgets('GameSelectScreen game cards render without overflow on narrow width', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(280, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({'last_played_game': 'alippe'});
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GameSelectScreen), findsOneWidget);
+    expect(find.text('Бал тил 1'), findsOneWidget);
+    expect(find.text('Бал тил 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('HomeScreen back button returns to GameSelectScreen', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({'last_played_game': 'bal_til'});
     await tester.pumpWidget(const MyApp());
@@ -633,7 +651,7 @@ void main() {
     expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көп');
   });
 
-  testWidgets('SectionBooksView Section 6 correctly maps body parts (3 parts)', (WidgetTester tester) async {
+  testWidgets('SectionBooksView Section 6 correctly maps body parts on horizontal scroll', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 360);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -658,33 +676,30 @@ void main() {
       (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
     );
 
-    // Left is boy body (0.png)
-    final leftBtn = find.byKey(const ValueKey('sec_6_left_0_true'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).imageAsset, contains('book4/section1/items/0.png'));
+    // Page 0: Left is boy body (0.png), Right is palm/hand (1.png) -> sound kol
+    final leftBtn0 = find.byKey(const ValueKey('sec_6_left_0_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn0).imageAsset, contains('book4/section1/items/0.png'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn0).spokenText, 'Дене');
 
-    // Page 0: right is palm/hand (1.png) -> sound kol
-    var rightBtn = find.byKey(const ValueKey('sec_6_right_1_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_kol.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Кол');
+    final rightBtn0 = find.byKey(const ValueKey('sec_6_right_1_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn0).soundAsset, contains('boy_kol.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn0).spokenText, 'Кол');
 
-    // Page 1: right is foot (2.png) -> sound but
+    // Page 1: Both left and right change on horizontal scroll!
+    // Left is foot (2.png) -> sound but, Right is head (3.png) -> sound bash
     await tester.tap(nextBtn);
     await tester.pumpAndSettle();
 
-    rightBtn = find.byKey(const ValueKey('sec_6_right_2_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_but.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Бут');
+    final leftBtn1 = find.byKey(const ValueKey('sec_6_left_2_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn1).soundAsset, contains('boy_but.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn1).spokenText, 'Бут');
 
-    // Page 2: right is head (3.png) -> sound bash
-    await tester.tap(nextBtn);
-    await tester.pumpAndSettle();
-
-    rightBtn = find.byKey(const ValueKey('sec_6_right_3_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_bash.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Баш');
+    final rightBtn1 = find.byKey(const ValueKey('sec_6_right_3_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn1).soundAsset, contains('boy_bash.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn1).spokenText, 'Баш');
   });
 
-  testWidgets('SectionBooksView Section 7 correctly maps face parts (8 parts)', (WidgetTester tester) async {
+  testWidgets('SectionBooksView Section 7 correctly maps face parts on horizontal scroll', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(800, 360);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -709,45 +724,59 @@ void main() {
       (widget) => widget is AlippeAnimButton && widget.imageAsset?.contains('right_btn') == true,
     );
 
-    // Left is boy face (0.png)
-    final leftBtn = find.byKey(const ValueKey('sec_7_left_0_true'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).imageAsset, contains('book4/section2/items/0.png'));
-    expect(tester.widget<AlippeAnimButton>(leftBtn).soundAsset, contains('boy_bash.mp3'));
+    // Page 0: Left is boy face (0.png) -> Bash, Right is eye (1.png) -> Koz
+    final leftBtn0 = find.byKey(const ValueKey('sec_7_left_0_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn0).imageAsset, contains('book4/section2/items/0.png'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn0).soundAsset, contains('boy_bash.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn0).spokenText, 'Баш');
 
-    // Page 0: right is eye (1.png) -> sound koz
-    var rightBtn = find.byKey(const ValueKey('sec_7_right_1_true'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains('boy_koz.mp3'));
-    expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, 'Көз');
+    final rightBtn0 = find.byKey(const ValueKey('sec_7_right_1_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn0).soundAsset, contains('boy_koz.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn0).spokenText, 'Көз');
 
-    // Advance through remaining pages
-    final expectedSounds = [
-      'boy_koz.mp3',
-      'boy_murun.mp3',
-      'boy_ooz.mp3',
-      'boy_kulak.mp3',
-      'boy_chach.mp3',
-      'boy_til.mp3',
-      'boy_kash.mp3',
-      'boy_tish.mp3',
-    ];
-    final expectedTexts = [
-      'Көз',
-      'Мурун',
-      'Ооз',
-      'Кулак',
-      'Чач',
-      'Тил',
-      'Каш',
-      'Тиш',
-    ];
+    // Page 1: Left is Nose (2.png) -> Murun, Right is Mouth (3.png) -> Ooz
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
 
-    for (int i = 1; i < expectedSounds.length; i++) {
-      await tester.tap(nextBtn);
-      await tester.pumpAndSettle();
-      rightBtn = find.byKey(ValueKey('sec_7_right_${i + 1}_true'));
-      expect(tester.widget<AlippeAnimButton>(rightBtn).soundAsset, contains(expectedSounds[i]));
-      expect(tester.widget<AlippeAnimButton>(rightBtn).spokenText, expectedTexts[i]);
-    }
+    final leftBtn1 = find.byKey(const ValueKey('sec_7_left_2_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn1).soundAsset, contains('boy_murun.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn1).spokenText, 'Мурун');
+
+    final rightBtn1 = find.byKey(const ValueKey('sec_7_right_3_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn1).soundAsset, contains('boy_ooz.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn1).spokenText, 'Ооз');
+
+    // Page 2: Left is Ear (4.png) -> Kulak, Right is Hair (5.png) -> Chach
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    final leftBtn2 = find.byKey(const ValueKey('sec_7_left_4_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn2).soundAsset, contains('boy_kulak.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn2).spokenText, 'Кулак');
+
+    final rightBtn2 = find.byKey(const ValueKey('sec_7_right_5_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn2).soundAsset, contains('boy_chach.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn2).spokenText, 'Чач');
+
+    // Page 3: Left is Tongue (6.png) -> Til, Right is Eyebrows (7.png) -> Kash
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    final leftBtn3 = find.byKey(const ValueKey('sec_7_left_6_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn3).soundAsset, contains('boy_til.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn3).spokenText, 'Тил');
+
+    final rightBtn3 = find.byKey(const ValueKey('sec_7_right_7_true'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn3).soundAsset, contains('boy_kash.mp3'));
+    expect(tester.widget<AlippeAnimButton>(rightBtn3).spokenText, 'Каш');
+
+    // Page 4: Left is Teeth (8.png) -> Tish, Right is empty
+    await tester.tap(nextBtn);
+    await tester.pumpAndSettle();
+
+    final leftBtn4 = find.byKey(const ValueKey('sec_7_left_8_true'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn4).soundAsset, contains('boy_tish.mp3'));
+    expect(tester.widget<AlippeAnimButton>(leftBtn4).spokenText, 'Тиш');
   });
 
   testWidgets('Section8View renders with Sidebar and 3 silhouette placeholders with bg frame', (WidgetTester tester) async {

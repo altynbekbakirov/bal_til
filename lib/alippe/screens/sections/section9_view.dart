@@ -118,10 +118,14 @@ class _Section9ViewState extends State<Section9View> {
             });
           } else {
             // Section 9 finished!
-            context.read<AlippeCubit>().addScore(4, 3);
+            final cubit = context.read<AlippeCubit>();
+            cubit.completeSection(9);
+            final isBookComplete = cubit.isSectionCompleted(8) && cubit.isSectionCompleted(9);
+            final awardScore = isBookComplete ? 3 : 1;
+            cubit.addScore(4, awardScore);
             AlippeGameFinishDialog.show(
               context: context,
-              score: 3,
+              score: awardScore,
               onRestart: () {
                 setState(() {
                   _targetColorIndex = 0;

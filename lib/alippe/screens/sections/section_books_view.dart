@@ -59,12 +59,7 @@ class _SectionBooksViewState extends State<SectionBooksView> {
     }
   }
 
-  int get _totalPages {
-    if (widget.sectionId == 6 || widget.sectionId == 7) {
-      return _items.length - 1;
-    }
-    return (_items.length / 2).ceil();
-  }
+  int get _totalPages => (_items.length / 2).ceil();
 
   void _nextPage() {
     if (_pageIndex < _totalPages - 1) {
@@ -73,10 +68,17 @@ class _SectionBooksViewState extends State<SectionBooksView> {
       });
     } else {
       // Completed this section!
-      context.read<AlippeCubit>().addScore(_bookId, 3);
+      final cubit = context.read<AlippeCubit>();
+      cubit.completeSection(widget.sectionId);
+      final book = AlippeData.books[_bookId];
+      final isBookComplete = book.section2Id == null ||
+          (cubit.isSectionCompleted(book.section1Id) &&
+              cubit.isSectionCompleted(book.section2Id!));
+      final awardScore = isBookComplete ? 3 : 1;
+      cubit.addScore(_bookId, awardScore);
       AlippeGameFinishDialog.show(
         context: context,
-        score: 3,
+        score: awardScore,
         onRestart: () {
           setState(() {
             _pageIndex = 0;
@@ -107,19 +109,14 @@ class _SectionBooksViewState extends State<SectionBooksView> {
     final sounds = AlippeData.getSectionSounds(widget.sectionId, isBoy);
     final texts = AlippeData.getSectionSpokenTexts(widget.sectionId);
 
-    final isBodySection = widget.sectionId == 6 || widget.sectionId == 7;
-    final leftIdx = isBodySection ? 0 : _pageIndex * 2;
-    final rightIdx = isBodySection ? _pageIndex + 1 : leftIdx + 1;
+    final leftIdx = _pageIndex * 2;
+    final rightIdx = leftIdx + 1;
 
     final leftItem = leftIdx < _items.length ? _items[leftIdx] : null;
     final rightItem = rightIdx < _items.length ? _items[rightIdx] : null;
 
-    final leftSound = isBodySection
-        ? (sounds.isNotEmpty ? sounds[0] : null)
-        : (leftIdx < sounds.length ? sounds[leftIdx] : null);
-    final leftText = isBodySection
-        ? (texts.isNotEmpty ? texts[0] : null)
-        : (leftIdx < texts.length ? texts[leftIdx] : null);
+    final leftSound = leftIdx < sounds.length ? sounds[leftIdx] : null;
+    final leftText = leftIdx < texts.length ? texts[leftIdx] : null;
 
     final rightSound = rightIdx < sounds.length ? sounds[rightIdx] : null;
     final rightText = rightIdx < texts.length ? texts[rightIdx] : null;

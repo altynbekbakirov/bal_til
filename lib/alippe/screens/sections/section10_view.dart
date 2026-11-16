@@ -10,7 +10,9 @@ import '../../widgets/alippe_container.dart';
 import '../dialogs/alippe_game_finish_dialog.dart';
 
 class Section10View extends StatefulWidget {
-  const Section10View({super.key});
+  final int initialLevel;
+
+  const Section10View({super.key, this.initialLevel = 1});
 
   @override
   State<Section10View> createState() => _Section10ViewState();
@@ -43,7 +45,7 @@ class _CardModel {
 }
 
 class _Section10ViewState extends State<Section10View> {
-  int _level = 1; // 1: 6 cards (3 pairs), 2: 8 cards (4 pairs)
+  late int _level; // 1: 6 cards (3 pairs), 2: 8 cards (4 pairs)
   int _roundIndex = 0;
   late List<_CardModel> _cards;
   int? _firstSelectedIndex;
@@ -56,6 +58,7 @@ class _Section10ViewState extends State<Section10View> {
   @override
   void initState() {
     super.initState();
+    _level = widget.initialLevel;
     _startRound();
   }
 
@@ -132,11 +135,15 @@ class _Section10ViewState extends State<Section10View> {
                   _startRound();
                 });
               } else if (_level == 1) {
-                // Level 1 complete (all 9 rounds of 6 cards passed)! Award 1 star.
-                context.read<AlippeCubit>().addScore(5, 1);
+                // Level 1 complete (all 9 rounds of 6 cards passed)!
+                final cubit = context.read<AlippeCubit>();
+                cubit.completeSection(10);
+                final isBookComplete = cubit.isSectionCompleted(12);
+                final awardScore = isBookComplete ? 3 : 1;
+                cubit.addScore(5, awardScore);
                 AlippeGameFinishDialog.show(
                   context: context,
-                  score: 1,
+                  score: awardScore,
                   onRestart: () {
                     AlippeAudio().playReset();
                     setState(() {
@@ -146,33 +153,36 @@ class _Section10ViewState extends State<Section10View> {
                     });
                   },
                   onNext: () {
-                    // Start Level 2 (8 cards)!
-                    setState(() {
-                      _level = 2;
-                      _roundIndex = 0;
-                      _startRound();
-                    });
+                    if (isBookComplete) {
+                      Navigator.of(context).pushReplacementNamed('/section', arguments: 11);
+                    } else {
+                      Navigator.of(context).pushReplacementNamed('/section', arguments: 12);
+                    }
                   },
                   onHome: () {
                     AlippeGameFinishDialog.navigateToAlippeHome(context);
                   },
                 );
               } else {
-                // Level 2 complete (all 7 rounds of 8 cards passed)! Award 3 stars.
-                context.read<AlippeCubit>().addScore(5, 3);
+                // Level 2 complete (all 7 rounds of 8 cards passed)!
+                final cubit = context.read<AlippeCubit>();
+                cubit.completeSection(12);
+                final isBookComplete = cubit.isSectionCompleted(10);
+                final awardScore = isBookComplete ? 3 : 1;
+                cubit.addScore(5, awardScore);
                 AlippeGameFinishDialog.show(
                   context: context,
-                  score: 3,
+                  score: awardScore,
                   onRestart: () {
                     AlippeAudio().playReset();
                     setState(() {
-                      _level = 1;
+                      _level = widget.initialLevel;
                       _roundIndex = 0;
                       _startRound();
                     });
                   },
                   onNext: () {
-                    AlippeGameFinishDialog.navigateToAlippeHome(context);
+                    Navigator.of(context).pushReplacementNamed('/section', arguments: 11);
                   },
                   onHome: () {
                     AlippeGameFinishDialog.navigateToAlippeHome(context);
@@ -220,7 +230,7 @@ class _Section10ViewState extends State<Section10View> {
                   onPress: () {
                     AlippeAudio().playReset();
                     setState(() {
-                      _level = 1;
+                      _level = widget.initialLevel;
                       _roundIndex = 0;
                       _startRound();
                     });

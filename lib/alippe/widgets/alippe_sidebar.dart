@@ -4,13 +4,13 @@ import 'alippe_anim_button.dart';
 
 class AlippeSidebar extends StatelessWidget {
   final VoidCallback onSettings;
-  final VoidCallback onPlay;
+  final VoidCallback? onPlay;
   final VoidCallback? onBack;
 
   const AlippeSidebar({
     super.key,
     required this.onSettings,
-    required this.onPlay,
+    this.onPlay,
     this.onBack,
   });
 
@@ -44,13 +44,15 @@ class AlippeSidebar extends StatelessWidget {
               onPress: onBack!,
             ),
           ],
-          const Spacer(),
-          AlippeAnimButton(
-            width: playSize,
-            height: playSize,
-            imageAsset: AlippeAssets.sidePlay,
-            onPress: onPlay,
-          ),
+          if (onPlay != null) ...[
+            const Spacer(),
+            AlippeAnimButton(
+              width: playSize,
+              height: playSize,
+              imageAsset: AlippeAssets.sidePlay,
+              onPress: onPlay!,
+            ),
+          ],
         ],
       ),
     );

@@ -26,14 +26,13 @@ class _Section0ViewState extends State<Section0View> {
       setState(() {
         _letterIndex++;
       });
-      if (_letterIndex == 10) cubit.addScore(0, 1);
-      if (_letterIndex == 20) cubit.addScore(0, 2);
     } else {
       // Completed all 36 letters!
-      cubit.addScore(0, 3);
+      cubit.completeSection(0);
+      cubit.addScore(0, 1);
       AlippeGameFinishDialog.show(
         context: context,
-        score: 3,
+        score: 1,
         onRestart: () {
           setState(() {
             _letterIndex = 0;

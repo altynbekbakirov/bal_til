@@ -75,10 +75,14 @@ class _Section8ViewState extends State<Section8View> {
           });
         } else {
           // Section 8 completed!
-          context.read<AlippeCubit>().addScore(4, 2);
+          final cubit = context.read<AlippeCubit>();
+          cubit.completeSection(8);
+          final isBookComplete = cubit.isSectionCompleted(8) && cubit.isSectionCompleted(9);
+          final awardScore = isBookComplete ? 3 : 1;
+          cubit.addScore(4, awardScore);
           AlippeGameFinishDialog.show(
             context: context,
-            score: 3,
+            score: awardScore,
             onRestart: () {
               AlippeAudio().playReset();
               setState(() {

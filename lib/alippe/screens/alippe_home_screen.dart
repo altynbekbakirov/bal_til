@@ -22,9 +22,13 @@ class AlippeHomeScreen extends StatefulWidget {
 }
 
 class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     // Only Alippe should be in landscape; engage landscape & immersive mode on entry
     AppOrientation.forceLandscape();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -48,6 +52,7 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     ExitNotificationOverlay.hide();
     // When leaving Alippe, restore portrait mode and standard UI overlay
     AppOrientation.forcePortrait();
@@ -61,28 +66,6 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
       return scores[bookId - 1] >= 3 || scores[bookId] > 0;
     }
     return false;
-  }
-
-  int _getBookIdForSection(int sectionId) {
-    if (sectionId <= 1) return 0;
-    if (sectionId <= 3) return 1;
-    if (sectionId <= 5) return 2;
-    if (sectionId <= 7) return 3;
-    if (sectionId <= 9) return 4;
-    return 5;
-  }
-
-  int _getValidSection(int lastSec, List<int> scores) {
-    final bookId = _getBookIdForSection(lastSec);
-    if (_isBookUnlocked(bookId, scores)) {
-      return lastSec;
-    }
-    for (int b = 5; b >= 0; b--) {
-      if (_isBookUnlocked(b, scores)) {
-        return AlippeData.books[b].section1Id;
-      }
-    }
-    return 0;
   }
 
   Widget _buildStars(int score) {
@@ -142,10 +125,35 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
   }
 
   void _onBookTap(BuildContext context, AlippeBookModel book) {
+    if (book.isComingSoon) {
+      AlippeAudio().playTap();
+      ExitNotificationOverlay.show(
+        context,
+        message: 'Бул оюн жакында кошулат!',
+      );
+      return;
+    }
     if (book.section2Id != null) {
       Navigator.of(context).pushNamed('/book', arguments: book.bookId);
     } else {
       Navigator.of(context).pushNamed('/section', arguments: book.section1Id);
+    }
+  }
+
+  void _onScrollButtonTap() {
+    if (!_pageController.hasClients) return;
+    if (_currentPage == 0) {
+      _pageController.animateToPage(
+        1,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _pageController.animateToPage(
+        0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -177,84 +185,158 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
           return AlippeContainer(
             child: Row(
               children: [
-                // Sidebar
+                // Left Sidebar (Settings and Back)
                 AlippeSidebar(
                   onSettings: () => AlippeSettingsDialog.show(context),
                   onBack: () => _exitAlippe(context),
-                  onPlay: () {
-                    final targetSec = _getValidSection(state.lastSection, state.scores);
-                    Navigator.of(context).pushNamed('/section', arguments: targetSec);
-                  },
                 ),
 
-              // 6 Books Grid (2 rows of 3 books)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 8, 14, 8),
-                  child: Column(
-                    children: [
-                      // Top row: Books 0, 1, 2
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[0],
-                              state.scores[0],
-                              _isBookUnlocked(0, state.scores),
-                            ),
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[1],
-                              state.scores[1],
-                              _isBookUnlocked(1, state.scores),
-                            ),
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[2],
-                              state.scores[2],
-                              _isBookUnlocked(2, state.scores),
-                            ),
-                          ],
+                // Center Games Grid (Horizontal PageView with 6 games per page)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: 2,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentPage = index;
+                              });
+                            },
+                            itemBuilder: (context, pageIndex) {
+                              final startIndex = pageIndex * 6;
+                              final pageBooks = AlippeData.books.sublist(
+                                startIndex,
+                                (startIndex + 6).clamp(0, AlippeData.books.length),
+                              );
+                              return _buildBooksGrid(context, pageBooks, state.scores);
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Bottom row: Books 3, 4, 5
-                      Expanded(
-                        child: Row(
-                          children: [
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[3],
-                              state.scores[3],
-                              _isBookUnlocked(3, state.scores),
-                            ),
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[4],
-                              state.scores[4],
-                              _isBookUnlocked(4, state.scores),
-                            ),
-                            _buildBookItem(
-                              context,
-                              AlippeData.books[5],
-                              state.scores[5],
-                              _isBookUnlocked(5, state.scores),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        _buildPageIndicator(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+
+                // Right Autoplay / Navigation Button to scroll horizontally
+                _buildRightNavButton(context),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBooksGrid(
+    BuildContext context,
+    List<AlippeBookModel> pageBooks,
+    List<int> scores,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Column(
+        children: [
+          // Top row (up to 3 games)
+          Expanded(
+            child: Row(
+              children: [
+                for (int i = 0; i < 3; i++)
+                  if (i < pageBooks.length)
+                    _buildBookItem(
+                      context,
+                      pageBooks[i],
+                      pageBooks[i].bookId < scores.length ? scores[pageBooks[i].bookId] : 0,
+                      _isBookUnlocked(pageBooks[i].bookId, scores),
+                    )
+                  else
+                    const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
           ),
-        );
-      },
-    ),
-  );
-}
+          const SizedBox(height: 8),
+          // Bottom row (up to 3 games)
+          Expanded(
+            child: Row(
+              children: [
+                for (int i = 3; i < 6; i++)
+                  if (i < pageBooks.length)
+                    _buildBookItem(
+                      context,
+                      pageBooks[i],
+                      pageBooks[i].bookId < scores.length ? scores[pageBooks[i].bookId] : 0,
+                      _isBookUnlocked(pageBooks[i].bookId, scores),
+                    )
+                  else
+                    const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageIndicator() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: _currentPage == 0 ? 20 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: _currentPage == 0 ? const Color(0xFFFFC107) : Colors.white60,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 6),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          width: _currentPage == 1 ? 20 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: _currentPage == 1 ? const Color(0xFFFFC107) : Colors.white60,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRightNavButton(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isCompact = screenHeight < 360;
+    final playSize = isCompact ? 80.0 : 92.0;
+
+    return Container(
+      width: isCompact ? 116 : 134,
+      padding: EdgeInsets.symmetric(
+        vertical: isCompact ? 10 : 14,
+        horizontal: isCompact ? 8 : 10,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Transform.flip(
+            flipX: _currentPage == 1,
+            child: AlippeAnimButton(
+              key: const Key('alippe_autoplay_button'),
+              width: playSize,
+              height: playSize,
+              imageAsset: AlippeAssets.sidePlay,
+              onPress: _onScrollButtonTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildBookItem(
     BuildContext context,
@@ -327,6 +409,7 @@ class _AlippeHomeScreenState extends State<AlippeHomeScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
         child: AlippeAnimButton(
+          key: Key('alippe_book_${book.bookId}'),
           scaleFactor: isUnlocked ? 1.2 : 1.04,
           noTapSnd: !isUnlocked,
           onPress: isUnlocked

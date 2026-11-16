@@ -9,6 +9,7 @@ class AlippeBookModel {
   final int section1Id;
   final int? section2Id;
   final String title;
+  final bool isComingSoon;
 
   const AlippeBookModel({
     required this.bookId,
@@ -17,6 +18,7 @@ class AlippeBookModel {
     required this.section1Id,
     this.section2Id,
     required this.title,
+    this.isComingSoon = false,
   });
 
   String get bgImage {
@@ -184,8 +186,62 @@ class AlippeData {
       icon: 'assets/alippe/images/books/book6/icon.png',
       theme: BookTheme.blue,
       section1Id: 10,
-      section2Id: null,
+      section2Id: 12,
       title: 'Эстутум оюну',
+    ),
+    AlippeBookModel(
+      bookId: 6,
+      icon: 'assets/alippe/images/books/book1/icon.png',
+      theme: BookTheme.orange,
+      section1Id: 11,
+      section2Id: null,
+      title: 'Үндү тап',
+      isComingSoon: false,
+    ),
+    AlippeBookModel(
+      bookId: 7,
+      icon: 'assets/alippe/images/books/book2/icon.png',
+      theme: BookTheme.red,
+      section1Id: 13,
+      section2Id: null,
+      title: 'Өсүмдүктөр',
+      isComingSoon: true,
+    ),
+    AlippeBookModel(
+      bookId: 8,
+      icon: 'assets/alippe/images/books/book3/icon.png',
+      theme: BookTheme.blue,
+      section1Id: 14,
+      section2Id: null,
+      title: 'Табышмактар',
+      isComingSoon: true,
+    ),
+    AlippeBookModel(
+      bookId: 9,
+      icon: 'assets/alippe/images/books/book4/icon.png',
+      theme: BookTheme.orange,
+      section1Id: 15,
+      section2Id: null,
+      title: 'Сөз курамы',
+      isComingSoon: true,
+    ),
+    AlippeBookModel(
+      bookId: 10,
+      icon: 'assets/alippe/images/books/book5/icon.png',
+      theme: BookTheme.red,
+      section1Id: 16,
+      section2Id: null,
+      title: 'Логика',
+      isComingSoon: true,
+    ),
+    AlippeBookModel(
+      bookId: 11,
+      icon: 'assets/alippe/images/books/book6/icon.png',
+      theme: BookTheme.blue,
+      section1Id: 17,
+      section2Id: null,
+      title: 'Тил курамы',
+      isComingSoon: true,
     ),
   ];
 
@@ -213,9 +269,24 @@ class AlippeData {
         return 'assets/alippe/images/books/book5/section2/icon.png';
       case 10:
         return 'assets/alippe/images/books/book6/section1/icon.png';
+      case 11:
+        return 'assets/alippe/images/books/book1/section2/icon.png';
+      case 12:
+        return 'assets/alippe/images/books/book6/section2/icon.png';
       default:
         return 'assets/alippe/images/books/book1/icon.png';
     }
+  }
+
+  static int getBookIdForSection(int sectionId) {
+    if (sectionId <= 1) return 0;
+    if (sectionId <= 3) return 1;
+    if (sectionId <= 5) return 2;
+    if (sectionId <= 7) return 3;
+    if (sectionId <= 9) return 4;
+    if (sectionId == 10 || sectionId == 12) return 5;
+    if (sectionId == 11) return 6;
+    return (sectionId - 5).clamp(0, 11);
   }
 
   static final List<({String letter, String word1, String word2})> _section0LetterDetails = [
@@ -617,13 +688,13 @@ class AlippeData {
       case 6:
         return isBoy
             ? const [
-                'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
+                '',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_kol.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_but.mp3',
                 'assets/alippe/audio/alippe/boy/body_parts/boy_bash.mp3',
               ]
             : const [
-                'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
+                '',
                 'assets/alippe/audio/alippe/girl/body_parts/g_kol.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_but.mp3',
                 'assets/alippe/audio/alippe/girl/body_parts/g_bash.mp3',
@@ -688,7 +759,7 @@ class AlippeData {
         ];
       case 6:
         return const [
-          'Бала',
+          'Дене',
           'Кол',
           'Бут',
           'Баш',
