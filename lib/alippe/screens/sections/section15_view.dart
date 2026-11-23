@@ -55,8 +55,8 @@ class _Section15ViewState extends State<Section15View> {
   void _playFirstPartPrompt() {
     if (!mounted) return;
     final current = _items[_currentIndex];
-    // Speak the first syllable prompt, e.g. "Ал..."
-    AlippeTts().speak(current.firstPart);
+    // Speak the first syllable prompt, e.g. "Ба"
+    AlippeTts().speak(current.firstPart.replaceAll('-', '').trim());
   }
 
   void _playFullWord() {
@@ -228,7 +228,10 @@ class _Section15ViewState extends State<Section15View> {
                             children: [
                               // Picture
                               Expanded(
-                                child: Image.asset(current.image, fit: BoxFit.contain),
+                                child: GestureDetector(
+                                  onTap: _playFirstPartPrompt,
+                                  child: Image.asset(current.image, fit: BoxFit.contain),
+                                ),
                               ),
                               const SizedBox(height: 12),
 
@@ -240,19 +243,30 @@ class _Section15ViewState extends State<Section15View> {
                                   GestureDetector(
                                     onTap: _playFirstPartPrompt,
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFCE4EC),
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(color: const Color(0xFFE91E63), width: 2),
                                       ),
-                                      child: Text(
-                                        current.firstPart,
-                                        style: const TextStyle(
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFFAD1457),
-                                        ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            current.firstPart,
+                                            style: const TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFFAD1457),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const Icon(
+                                            Icons.volume_up_rounded,
+                                            color: Color(0xFFE91E63),
+                                            size: 24,
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),

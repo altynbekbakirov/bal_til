@@ -290,7 +290,7 @@ class SpeechDevelopmentData {
   // ================= 4-ЭТАП: БИР СӨЗ АЙТУУ («СӨЗДҮ ТАП» - 10-ОЮН) =================
   static const List<WordGuessItem> stage4WordGuesses = [
     WordGuessItem(
-      firstPart: 'Ба-',
+      firstPart: 'Ба',
       missingPart: 'лык',
       fullWord: 'Балык',
       image: 'assets/alippe/images/books/book1/section1/2/pic2.png',
@@ -299,7 +299,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_balyk.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Бе-',
+      firstPart: 'Бе',
       missingPart: 'лек',
       fullWord: 'Белек',
       image: 'assets/alippe/images/books/book1/section1/2/pic1.png',
@@ -308,7 +308,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_belek.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Дар-',
+      firstPart: 'Дар',
       missingPart: 'быз',
       fullWord: 'Дарбыз',
       image: 'assets/alippe/images/books/book1/section1/5/pic1.png',
@@ -317,7 +317,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_darbyz.mp3',
     ),
     WordGuessItem(
-      firstPart: 'То-',
+      firstPart: 'То',
       missingPart: 'ок',
       fullWord: 'Тоок',
       image: 'assets/alippe/images/books/book1/section1/22/pic2.png',
@@ -326,16 +326,16 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_took.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Ма-',
-      missingPart: 'шина',
-      fullWord: 'Машина',
-      image: 'assets/alippe/images/books/book1/section1/14/pic2.png',
-      options: ['шина', 'мыл', 'кала'],
-      boySound: 'assets/alippe/audio/alippe/boy/boy_mashina.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
+      firstPart: 'Ко',
+      missingPart: 'ён',
+      fullWord: 'Коён',
+      image: 'assets/alippe/images/books/book1/section1/7/pic2.png',
+      options: ['ён', 'он', 'юн'],
+      boySound: 'assets/alippe/audio/alippe/boy/boy_koyon.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_koyon.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Ү-',
+      firstPart: 'Ү',
       missingPart: 'кү',
       fullWord: 'Үкү',
       image: 'assets/alippe/images/books/book1/section1/24/pic1.png',
@@ -344,7 +344,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_uku.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Са-',
+      firstPart: 'Са',
       missingPart: 'ат',
       fullWord: 'Саат',
       image: 'assets/alippe/images/books/book1/section1/21/pic1.png',
@@ -353,13 +353,31 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_saat.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Ко-',
-      missingPart: 'ён',
-      fullWord: 'Коён',
-      image: 'assets/alippe/images/books/book1/section1/7/pic2.png',
-      options: ['ён', 'он', 'юн'],
-      boySound: 'assets/alippe/audio/alippe/boy/boy_koyon.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_koyon.mp3',
+      firstPart: 'Ко',
+      missingPart: 'он',
+      fullWord: 'Коон',
+      image: 'assets/alippe/images/books/book1/section1/12/pic1.png',
+      options: ['он', 'ор', 'оз'],
+      boySound: 'assets/alippe/audio/alippe/boy/boy_koon.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_koon.mp3',
+    ),
+    WordGuessItem(
+      firstPart: 'Жө',
+      missingPart: 'жө',
+      fullWord: 'Жөжө',
+      image: 'assets/alippe/images/books/book1/section1/8/pic2.png',
+      options: ['жө', 'лө', 'бө'],
+      boySound: 'assets/alippe/audio/alippe/boy/boy_jojo.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_jojo.mp3',
+    ),
+    WordGuessItem(
+      firstPart: 'Өр',
+      missingPart: 'дөк',
+      fullWord: 'Өрдөк',
+      image: 'assets/alippe/images/books/book1/section1/18/pic1.png',
+      options: ['дөк', 'бөк', 'төк'],
+      boySound: 'assets/alippe/audio/alippe/boy/boy_ordok.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_ordok.mp3',
     ),
   ];
 
