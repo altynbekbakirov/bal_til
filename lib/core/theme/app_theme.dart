@@ -17,6 +17,13 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       fontFamily: fontName,
+      fontFamilyFallback: const [
+        'Roboto',
+        'Segoe UI',
+        'Arial',
+        'Helvetica',
+        'sans-serif',
+      ],
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryAmber,
         primary: primaryAmber,
