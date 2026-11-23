@@ -96,8 +96,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
     final option = _currentOptions[index];
 
     if (option.isCorrect) {
-      // Correct answer!
-      AlippeAudio().playGood();
+      // Correct answer! (Sound removed for speech training)
       setState(() {
         _isAnsweredCorrectly = true;
         _correctOptionIndex = index;
@@ -112,7 +111,6 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
         if (!mounted) return;
 
         if (_currentIndex < _questions.length - 1) {
-          AlippeAudio().playNext();
           setState(() {
             _currentIndex++;
             _loadQuestion();
@@ -333,53 +331,41 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
           color: Colors.transparent,
           child: InkWell(
             key: const Key('section11_listen_button'),
-            borderRadius: BorderRadius.circular(24),
+            customBorder: const CircleBorder(),
             onTap: _playTargetSound,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 10),
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
+                shape: BoxShape.circle,
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
+                  colors: [Color(0xFF66BB6A), Color(0xFF2E7D32)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white, width: 2.8),
+                border: Border.all(color: Colors.white, width: 3.8),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x55000000),
-                    blurRadius: 10,
+                    color: Color(0x40000000),
+                    blurRadius: 8,
                     offset: Offset(0, 4),
                   ),
                   BoxShadow(
                     color: Color(0x334CAF50),
-                    blurRadius: 12,
+                    blurRadius: 14,
                     spreadRadius: 2,
                   ),
                 ],
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.volume_up_rounded,
-                    color: Colors.white,
-                    size: 38,
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Угуу үчүн бас',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.4,
-                      shadows: [
-                        Shadow(color: Colors.black54, blurRadius: 3, offset: Offset(0, 1.5)),
-                      ],
-                    ),
-                  ),
-                ],
+              child: const Center(
+                child: Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 54,
+                  shadows: [
+                    Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
+                  ],
+                ),
               ),
             ),
           ),

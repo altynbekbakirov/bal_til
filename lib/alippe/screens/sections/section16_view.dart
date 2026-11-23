@@ -86,7 +86,6 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   void _combineWords() {
     final current = _items[_currentIndex];
     _connectController.forward();
-    AlippeAudio().playGood();
 
     setState(() {
       _isCombined = true;
@@ -101,7 +100,6 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
     _transitionTimer = Timer(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
       if (_currentIndex < _items.length - 1) {
-        AlippeAudio().playNext();
         setState(() {
           _currentIndex++;
           _loadPhrase();

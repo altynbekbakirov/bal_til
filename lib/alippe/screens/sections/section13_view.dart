@@ -68,7 +68,6 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
   }
 
   void _onRepeatTap() {
-    AlippeAudio().playGood();
     setState(() {
       _hasRepeated = true;
     });
@@ -77,7 +76,6 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
     _transitionTimer = Timer(const Duration(milliseconds: 700), () {
       if (!mounted) return;
       if (_currentIndex < _items.length - 1) {
-        AlippeAudio().playNext();
         setState(() {
           _currentIndex++;
           _hasRepeated = false;

@@ -74,7 +74,6 @@ class _Section15ViewState extends State<Section15View> {
     final current = _items[_currentIndex];
 
     if (option == current.missingPart) {
-      AlippeAudio().playGood();
       setState(() {
         _isSolved = true;
         _selectedOption = option;
@@ -84,7 +83,6 @@ class _Section15ViewState extends State<Section15View> {
       _transitionTimer = Timer(const Duration(milliseconds: 1100), () {
         if (!mounted) return;
         if (_currentIndex < _items.length - 1) {
-          AlippeAudio().playNext();
           setState(() {
             _currentIndex++;
             _loadQuestion();

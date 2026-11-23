@@ -65,7 +65,6 @@ class _Section17ViewState extends State<Section17View> with SingleTickerProvider
   }
 
   void _onRepeatSentenceTap() {
-    AlippeAudio().playGood();
     setState(() {
       _hasRepeatedSentence = true;
     });
@@ -74,7 +73,6 @@ class _Section17ViewState extends State<Section17View> with SingleTickerProvider
     _transitionTimer = Timer(const Duration(milliseconds: 800), () {
       if (!mounted) return;
       if (_sentenceIndex < _sentenceItems.length - 1) {
-        AlippeAudio().playNext();
         setState(() {
           _sentenceIndex++;
           _hasRepeatedSentence = false;
@@ -98,7 +96,6 @@ class _Section17ViewState extends State<Section17View> with SingleTickerProvider
 
   void _playPecsSentence() {
     if (_selectedCards.isEmpty) return;
-    AlippeAudio().playGood();
     final fullText = _selectedCards.map((c) => c.speechText).join(' ');
     AlippeTts().speak(fullText);
   }
