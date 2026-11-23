@@ -108,13 +108,13 @@ void main() {
 
       expect(find.textContaining('Сөздү тап: 1/'), findsOneWidget);
 
-      // Tap correct option for first word ("Ал-" -> "ма")
+      // Tap correct option for first word ("Ба-" -> "лык")
       final correctOptKey = Key('word_guess_opt_${SpeechDevelopmentData.stage4WordGuesses.first.missingPart}');
       expect(find.byKey(correctOptKey), findsOneWidget);
 
       await tester.tap(find.byKey(correctOptKey));
       await tester.pump();
-      expect(find.textContaining('= Алма!'), findsOneWidget);
+      expect(find.textContaining('= Балык!'), findsOneWidget);
     });
   });
 
