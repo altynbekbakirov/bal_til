@@ -8,6 +8,7 @@ import 'package:bal_til/alippe/screens/alippe_home_screen.dart';
 import 'package:bal_til/alippe/screens/alippe_book_screen.dart';
 import 'package:bal_til/alippe/widgets/alippe_anim_button.dart';
 import 'package:bal_til/alippe/screens/sections/section11_view.dart';
+import 'package:bal_til/alippe/screens/sections/section13_view.dart';
 import 'package:bal_til/core/services/common_services.dart';
 import 'package:bal_til/alippe/screens/alippe_section_screen.dart';
 import 'package:bal_til/alippe/screens/dialogs/alippe_game_finish_dialog.dart';
@@ -276,7 +277,7 @@ void main() {
       expect(find.byKey(const Key('alippe_book_6')), findsNothing);
     });
 
-    testWidgets('Tapping unlocked Book 6 navigates to Game 7 (Section11View), while remaining books show coming soon', (tester) async {
+    testWidgets('Tapping unlocked Book 6 navigates to Game 7 (Section11View), and Book 7 navigates to Game 8 (Section13View)', (tester) async {
       tester.view.physicalSize = const Size(800, 360);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -324,10 +325,10 @@ void main() {
       await cubit.addScore(6, 3);
       await tester.pumpAndSettle();
 
-      // Tap unlocked Book 7 -> shows coming soon notification
+      // Tap unlocked Book 7 -> navigates to Game 8 (Section 13: Үн чыгаруу)
       await tester.tap(find.byKey(const Key('alippe_book_7')));
       await tester.pumpAndSettle();
-      expect(find.text('Бул оюн жакында кошулат!'), findsOneWidget);
+      expect(find.byType(Section13View), findsOneWidget);
     });
 
     testWidgets('Horizontal drag/swipe scrolls between pages', (tester) async {

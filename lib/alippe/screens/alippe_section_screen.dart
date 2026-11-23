@@ -10,6 +10,11 @@ import 'sections/section8_view.dart';
 import 'sections/section9_view.dart';
 import 'sections/section10_view.dart';
 import 'sections/section11_view.dart';
+import 'sections/section13_view.dart';
+import 'sections/section14_view.dart';
+import 'sections/section15_view.dart';
+import 'sections/section16_view.dart';
+import 'sections/section17_view.dart';
 
 class AlippeSectionScreen extends StatefulWidget {
   final int sectionId;
@@ -71,6 +76,16 @@ class _AlippeSectionScreenState extends State<AlippeSectionScreen> {
         return const Section11View();
       case 12:
         return const Section10View(initialLevel: 2);
+      case 13:
+        return const Section13View();
+      case 14:
+        return const Section14View();
+      case 15:
+        return const Section15View();
+      case 16:
+        return const Section16View();
+      case 17:
+        return const Section17View();
       default:
         return const Section0View();
     }

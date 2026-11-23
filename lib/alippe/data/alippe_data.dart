@@ -191,57 +191,57 @@ class AlippeData {
     ),
     AlippeBookModel(
       bookId: 6,
-      icon: 'assets/alippe/images/books/book1/icon.png',
+      icon: 'assets/alippe/images/books/book7/icon.png',
       theme: BookTheme.orange,
       section1Id: 11,
       section2Id: null,
-      title: 'Үндү тап',
+      title: 'Угуп тап',
       isComingSoon: false,
     ),
     AlippeBookModel(
       bookId: 7,
-      icon: 'assets/alippe/images/books/book2/icon.png',
+      icon: 'assets/alippe/images/books/book8/icon.png',
       theme: BookTheme.red,
       section1Id: 13,
       section2Id: null,
-      title: 'Өсүмдүктөр',
-      isComingSoon: true,
+      title: 'Үн чыгаруу',
+      isComingSoon: false,
     ),
     AlippeBookModel(
       bookId: 8,
-      icon: 'assets/alippe/images/books/book3/icon.png',
+      icon: 'assets/alippe/images/books/book9/icon.png',
       theme: BookTheme.blue,
       section1Id: 14,
       section2Id: null,
-      title: 'Табышмактар',
-      isComingSoon: true,
+      title: 'Муун кайталоо',
+      isComingSoon: false,
     ),
     AlippeBookModel(
       bookId: 9,
-      icon: 'assets/alippe/images/books/book4/icon.png',
+      icon: 'assets/alippe/images/books/book10/icon.png',
       theme: BookTheme.orange,
       section1Id: 15,
       section2Id: null,
-      title: 'Сөз курамы',
-      isComingSoon: true,
+      title: 'Сөздү тап',
+      isComingSoon: false,
     ),
     AlippeBookModel(
       bookId: 10,
-      icon: 'assets/alippe/images/books/book5/icon.png',
+      icon: 'assets/alippe/images/books/book11/icon.png',
       theme: BookTheme.red,
       section1Id: 16,
       section2Id: null,
-      title: 'Логика',
-      isComingSoon: true,
+      title: 'Сөз айкашы',
+      isComingSoon: false,
     ),
     AlippeBookModel(
       bookId: 11,
-      icon: 'assets/alippe/images/books/book6/icon.png',
+      icon: 'assets/alippe/images/books/book12/icon.png',
       theme: BookTheme.blue,
       section1Id: 17,
       section2Id: null,
-      title: 'Тил курамы',
-      isComingSoon: true,
+      title: 'Байланыш тактасы',
+      isComingSoon: false,
     ),
   ];
 
@@ -270,9 +270,19 @@ class AlippeData {
       case 10:
         return 'assets/alippe/images/books/book6/section1/icon.png';
       case 11:
-        return 'assets/alippe/images/books/book1/section2/icon.png';
+        return 'assets/alippe/images/books/book7/icon.png';
       case 12:
         return 'assets/alippe/images/books/book6/section2/icon.png';
+      case 13:
+        return 'assets/alippe/images/books/book8/icon.png';
+      case 14:
+        return 'assets/alippe/images/books/book9/icon.png';
+      case 15:
+        return 'assets/alippe/images/books/book10/icon.png';
+      case 16:
+        return 'assets/alippe/images/books/book11/icon.png';
+      case 17:
+        return 'assets/alippe/images/books/book12/icon.png';
       default:
         return 'assets/alippe/images/books/book1/icon.png';
     }
@@ -286,6 +296,11 @@ class AlippeData {
     if (sectionId <= 9) return 4;
     if (sectionId == 10 || sectionId == 12) return 5;
     if (sectionId == 11) return 6;
+    if (sectionId == 13) return 7;
+    if (sectionId == 14) return 8;
+    if (sectionId == 15) return 9;
+    if (sectionId == 16) return 10;
+    if (sectionId == 17) return 11;
     return (sectionId - 5).clamp(0, 11);
   }
 
