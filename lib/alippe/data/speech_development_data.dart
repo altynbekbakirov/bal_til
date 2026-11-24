@@ -51,6 +51,8 @@ class WordGuessItem {
   final List<String> options;
   final String boySound;
   final String girlSound;
+  final String? boyPromptSound;
+  final String? girlPromptSound;
 
   const WordGuessItem({
     required this.firstPart,
@@ -60,18 +62,26 @@ class WordGuessItem {
     required this.options,
     required this.boySound,
     required this.girlSound,
+    this.boyPromptSound,
+    this.girlPromptSound,
   });
 
   String getSound(bool isBoy) => isBoy ? boySound : girlSound;
+  String? getPromptSound(bool isBoy) =>
+      isBoy ? (boyPromptSound ?? boySound) : (girlPromptSound ?? girlSound);
 }
 
-/// 5-этап: Сөз айкашы (эки сөздү бириктирүү: «суу бер», «кызыл гүл», «чоң топ»)
+/// 5-этап: Сөз айкашы (эки сөздү бириктирүү: «кызыл гүл», «көк машина»)
 class PhrasePairItem {
   final String word1;
   final String word2;
   final String fullPhrase;
   final String image1;
   final String image2;
+  final String boySound1;
+  final String girlSound1;
+  final String boySound2;
+  final String girlSound2;
   final String boySound;
   final String girlSound;
 
@@ -81,10 +91,16 @@ class PhrasePairItem {
     required this.fullPhrase,
     required this.image1,
     required this.image2,
+    required this.boySound1,
+    required this.girlSound1,
+    required this.boySound2,
+    required this.girlSound2,
     required this.boySound,
     required this.girlSound,
   });
 
+  String getWord1Sound(bool isBoy) => isBoy ? boySound1 : girlSound1;
+  String getWord2Sound(bool isBoy) => isBoy ? boySound2 : girlSound2;
   String getSound(bool isBoy) => isBoy ? boySound : girlSound;
 }
 
@@ -233,8 +249,8 @@ class SpeechDevelopmentData {
       syllable: 'БА',
       wordExample: 'Ба-лык',
       image: 'assets/alippe/images/books/book1/section1/2/pic2.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_balyk.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_balyk.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_ba.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_ba.mp3',
     ),
     SyllableItem(
       syllable: 'АТ',
@@ -247,43 +263,43 @@ class SpeechDevelopmentData {
       syllable: 'ТО',
       wordExample: 'То-ок',
       image: 'assets/alippe/images/books/book1/section1/22/pic2.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_took.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_took.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_to.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_to.mp3',
     ),
     SyllableItem(
       syllable: 'МА',
       wordExample: 'Ма-ши-на',
       image: 'assets/alippe/images/books/book1/section1/14/pic2.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_mashina.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_ma.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_ma.mp3',
     ),
     SyllableItem(
       syllable: 'БЕ',
       wordExample: 'Бе-лек',
       image: 'assets/alippe/images/books/book1/section1/2/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_belek.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_belek.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_be.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_be.mp3',
     ),
     SyllableItem(
       syllable: 'ДА',
       wordExample: 'Дар-быз',
       image: 'assets/alippe/images/books/book1/section1/5/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_darbyz.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_darbyz.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_dar.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_dar.mp3',
     ),
     SyllableItem(
       syllable: 'ҮК',
       wordExample: 'Ү-кү',
       image: 'assets/alippe/images/books/book1/section1/24/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_uku.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_uku.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_uk.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_uk.mp3',
     ),
     SyllableItem(
       syllable: 'СА',
       wordExample: 'Са-ат',
       image: 'assets/alippe/images/books/book1/section1/21/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_saat.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_saat.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_sa.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_sa.mp3',
     ),
   ];
 
@@ -294,63 +310,77 @@ class SpeechDevelopmentData {
       missingPart: 'лык',
       fullWord: 'Балык',
       image: 'assets/alippe/images/books/book1/section1/2/pic2.png',
-      options: ['лык', 'та', 'ра'],
+      options: ['та', 'лык', 'ра'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_balyk.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_balyk.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_ba.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_ba.mp3',
     ),
     WordGuessItem(
       firstPart: 'Бе',
       missingPart: 'лек',
       fullWord: 'Белек',
       image: 'assets/alippe/images/books/book1/section1/2/pic1.png',
-      options: ['лек', 'рик', 'тек'],
+      options: ['рик', 'тек', 'лек'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_belek.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_belek.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_be.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_be.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Дар',
-      missingPart: 'быз',
+      firstPart: 'Да',
+      missingPart: 'рбыз',
       fullWord: 'Дарбыз',
       image: 'assets/alippe/images/books/book1/section1/5/pic1.png',
-      options: ['быз', 'сык', 'мак'],
+      options: ['сык', 'рбыз', 'мак'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_darbyz.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_darbyz.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_dar.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_dar.mp3',
     ),
     WordGuessItem(
       firstPart: 'То',
       missingPart: 'ок',
       fullWord: 'Тоок',
       image: 'assets/alippe/images/books/book1/section1/22/pic2.png',
-      options: ['ок', 'ор', 'оз'],
+      options: ['ор', 'ок', 'оз'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_took.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_took.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_to.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_to.mp3',
     ),
     WordGuessItem(
       firstPart: 'Ко',
       missingPart: 'ён',
       fullWord: 'Коён',
       image: 'assets/alippe/images/books/book1/section1/7/pic2.png',
-      options: ['ён', 'он', 'юн'],
+      options: ['он', 'юн', 'ён'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_koyon.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_koyon.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_ko.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_ko.mp3',
     ),
     WordGuessItem(
       firstPart: 'Ү',
       missingPart: 'кү',
       fullWord: 'Үкү',
       image: 'assets/alippe/images/books/book1/section1/24/pic1.png',
-      options: ['кү', 'тү', 'рү'],
+      options: ['тү', 'кү', 'рү'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_uku.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_uku.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_u.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_u.mp3',
     ),
     WordGuessItem(
       firstPart: 'Са',
       missingPart: 'ат',
       fullWord: 'Саат',
       image: 'assets/alippe/images/books/book1/section1/21/pic1.png',
-      options: ['ат', 'бы', 'ры'],
+      options: ['бы', 'ры', 'ат'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_saat.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_saat.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_sa.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_sa.mp3',
     ),
     WordGuessItem(
       firstPart: 'Ко',
@@ -360,82 +390,112 @@ class SpeechDevelopmentData {
       options: ['он', 'ор', 'оз'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_koon.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_koon.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_ko.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_ko.mp3',
     ),
     WordGuessItem(
       firstPart: 'Жө',
       missingPart: 'жө',
       fullWord: 'Жөжө',
       image: 'assets/alippe/images/books/book1/section1/8/pic2.png',
-      options: ['жө', 'лө', 'бө'],
+      options: ['лө', 'жө', 'бө'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_jojo.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_jojo.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_jojo.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_jojo.mp3',
     ),
     WordGuessItem(
       firstPart: 'Өр',
       missingPart: 'дөк',
       fullWord: 'Өрдөк',
       image: 'assets/alippe/images/books/book1/section1/18/pic1.png',
-      options: ['дөк', 'бөк', 'төк'],
+      options: ['бөк', 'төк', 'дөк'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_ordok.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_ordok.mp3',
+      boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_ordok.mp3',
+      girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_ordok.mp3',
     ),
   ];
 
   // ================= 5-ЭТАП: СӨЗ АЙКАШЫ (11-ОЮН) =================
   static const List<PhrasePairItem> stage5Phrases = [
     PhrasePairItem(
-      word1: 'Суу',
-      word2: 'бер',
-      fullPhrase: 'Суу бер',
-      image1: 'assets/images/map/lake_cropped.png',
-      image2: 'assets/alippe/images/books/book4/section1/items/1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_S.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_S.mp3',
-    ),
-    PhrasePairItem(
       word1: 'Кызыл',
       word2: 'гүл',
       fullPhrase: 'Кызыл гүл',
-      image1: 'assets/alippe/images/books/book5/section2/colors_bg/red.png',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/red.png',
       image2: 'assets/alippe/images/books/book1/section1/4/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_gul.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_gul.mp3',
-    ),
-    PhrasePairItem(
-      word1: 'Чоң',
-      word2: 'топ',
-      fullPhrase: 'Чоң топ',
-      image1: 'assets/alippe/images/books/book1/section1/19/letter1.png',
-      image2: 'assets/alippe/images/books/book1/section1/19/pic2.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_top.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_top.mp3',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_kyzyl.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_kyzyl.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_gul.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_gul.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_kyzyl_gul.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_kyzyl_gul.mp3',
     ),
     PhrasePairItem(
       word1: 'Көк',
       word2: 'машина',
       fullPhrase: 'Көк машина',
-      image1: 'assets/alippe/images/books/book5/section2/colors_bg/blue.png',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/blue.png',
       image2: 'assets/alippe/images/books/book1/section1/14/pic2.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_mashina.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_kok.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_kok.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_mashina.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_kok_mashina.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_kok_mashina.mp3',
     ),
     PhrasePairItem(
-      word1: 'Нан',
-      word2: 'же',
-      fullPhrase: 'Нан же',
-      image1: 'assets/alippe/images/books/book1/section1/15/pic1.png',
-      image2: 'assets/alippe/images/books/book4/section1/items/1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_nan.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_nan.mp3',
+      word1: 'Сары',
+      word2: 'коон',
+      fullPhrase: 'Сары коон',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/yellow.png',
+      image2: 'assets/alippe/images/books/book1/section1/12/pic1.png',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_sary.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_sary.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_koon.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_koon.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_sary_koon.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_sary_koon.mp3',
     ),
     PhrasePairItem(
-      word1: 'Белек',
-      word2: 'ал',
-      fullPhrase: 'Белек ал',
-      image1: 'assets/alippe/images/books/book1/section1/2/pic1.png',
-      image2: 'assets/alippe/images/books/book4/section1/items/1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_belek.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_belek.mp3',
+      word1: 'Жашыл',
+      word2: 'бадыраң',
+      fullPhrase: 'Жашыл бадыраң',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/green.png',
+      image2: 'assets/alippe/images/books/book1/section1/16/pic2.png',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_jashyl.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_jashyl.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_badyrang.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_badyrang.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_jashyl_badyrang.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_jashyl_badyrang.mp3',
+    ),
+    PhrasePairItem(
+      word1: 'Ак',
+      word2: 'коён',
+      fullPhrase: 'Ак коён',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/white.png',
+      image2: 'assets/alippe/images/books/book5/section2/white_koyon.png',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_AK.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_ak.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_koyon.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_koyon.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_ak_koyon.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_ak_koyon.mp3',
+    ),
+    PhrasePairItem(
+      word1: 'Кара',
+      word2: 'тоок',
+      fullPhrase: 'Кара тоок',
+      image1: 'assets/alippe/images/books/book5/section2/colors_balloon/black.png',
+      image2: 'assets/alippe/images/books/book1/section1/22/pic2.png',
+      boySound1: 'assets/alippe/audio/alippe/boy/colors/boy_kara.mp3',
+      girlSound1: 'assets/alippe/audio/alippe/girl/colors/g_kara.mp3',
+      boySound2: 'assets/alippe/audio/alippe/boy/boy_took.mp3',
+      girlSound2: 'assets/alippe/audio/alippe/girl/g_took.mp3',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_phrase_kara_took.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_phrase_kara_took.mp3',
     ),
   ];
 

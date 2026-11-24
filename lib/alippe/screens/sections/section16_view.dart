@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_audio.dart';
 import '../../core/alippe_constants.dart';
 import '../../core/alippe_cubit.dart';
-import '../../core/alippe_tts.dart';
 import '../../data/speech_development_data.dart';
 import '../../widgets/alippe_anim_button.dart';
 import '../../widgets/alippe_container.dart';
@@ -25,6 +24,8 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   bool _isCombined = false;
   Timer? _autoPlayTimer;
   Timer? _transitionTimer;
+  Timer? _combineTimer;
+  Timer? _speechTimer;
 
   late final AnimationController _connectController;
   late final Animation<Offset> _leftSlideAnimation;
@@ -54,18 +55,26 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   void dispose() {
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
+    _combineTimer?.cancel();
+    _speechTimer?.cancel();
+    AlippeAudio().stopSfx();
     _connectController.dispose();
     super.dispose();
   }
 
   void _loadPhrase() {
     _autoPlayTimer?.cancel();
+    _transitionTimer?.cancel();
+    _combineTimer?.cancel();
+    _speechTimer?.cancel();
     _connectController.reset();
     _isWord1Played = false;
     _isWord2Played = false;
     _isCombined = false;
 
-    _autoPlayTimer = Timer(const Duration(milliseconds: 350), () {
+    AlippeAudio().stopSfx();
+
+    _autoPlayTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) _playWord(1);
     });
   }
@@ -73,9 +82,10 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   void _playWord(int wordNum) {
     if (!mounted) return;
     final current = _items[_currentIndex];
-    final text = wordNum == 1 ? current.word1 : current.word2;
-    AlippeAudio().playTap();
-    AlippeTts().speak(text);
+    final isBoy = context.read<AlippeCubit>().state.boyActive;
+    final sound = wordNum == 1 ? current.getWord1Sound(isBoy) : current.getWord2Sound(isBoy);
+    AlippeAudio().stopSfx();
+    AlippeAudio().playSfx(sound);
 
     setState(() {
       if (wordNum == 1) _isWord1Played = true;
@@ -91,13 +101,23 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
       _isCombined = true;
     });
 
-    final isBoy = context.read<AlippeCubit>().state.boyActive;
-    final sound = current.getSound(isBoy);
-    AlippeAudio().playSfx(sound);
-    AlippeTts().speak(current.fullPhrase);
+    AlippeAudio().stopSfx();
+    _combineTimer?.cancel();
+    _speechTimer?.cancel();
+    // Play good sound on combining words consistent with games 1-6
+    AlippeAudio().playGood();
+
+    // Play full phrase audio after brief jingle pause without sound overlap
+    _combineTimer = Timer(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      final isBoy = context.read<AlippeCubit>().state.boyActive;
+      final sound = current.getSound(isBoy);
+      AlippeAudio().playSfx(sound);
+    });
 
     _transitionTimer?.cancel();
-    _transitionTimer = Timer(const Duration(milliseconds: 1400), () {
+    // Time pause before proceeding to next round so sounds do not overlap
+    _transitionTimer = Timer(const Duration(milliseconds: 2600), () {
       if (!mounted) return;
       if (_currentIndex < _items.length - 1) {
         setState(() {
@@ -111,6 +131,7 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   }
 
   void _finishGame() {
+    AlippeAudio().stopSfx();
     final cubit = context.read<AlippeCubit>();
     cubit.completeSection(16);
     cubit.addScore(10, 3);
@@ -120,13 +141,22 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
       score: 3,
       onRestart: () {
         AlippeAudio().playReset();
+        AlippeAudio().stopSfx();
+        _autoPlayTimer?.cancel();
+        _transitionTimer?.cancel();
         setState(() {
           _currentIndex = 0;
           _loadPhrase();
         });
       },
-      onNext: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
-      onHome: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
+      onNext: () {
+        AlippeAudio().stopSfx();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
+      onHome: () {
+        AlippeAudio().stopSfx();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
     );
   }
 
@@ -142,7 +172,7 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
             top: 0,
             bottom: 0,
             child: Container(
-              width: 120,
+              width: 100,
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
               child: Column(
                 children: [
@@ -154,6 +184,11 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
                     imageAsset: AlippeAssets.sideRestart,
                     onPress: () {
                       AlippeAudio().playReset();
+                      AlippeAudio().stopSfx();
+                      _combineTimer?.cancel();
+                      _speechTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
                       setState(() {
                         _currentIndex = 0;
                         _loadPhrase();
@@ -167,17 +202,24 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
                     height: 75,
                     scaleFactor: 1.3,
                     imageAsset: AlippeAssets.sideBack,
-                    onPress: () => Navigator.of(context).pop(),
+                    onPress: () {
+                      AlippeAudio().stopSfx();
+                      _combineTimer?.cancel();
+                      _speechTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
+                      Navigator.of(context).pop();
+                    },
                   ),
                 ],
               ),
             ),
           ),
           Positioned.fill(
-            left: 120,
-            right: 20,
-            top: 16,
-            bottom: 16,
+            left: 105,
+            right: 15,
+            top: 12,
+            bottom: 12,
             child: Column(
               children: [
                 // Header status
@@ -215,105 +257,148 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
-                // Cards Area
+                // Cards Area - dynamically enlarged at least twice
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final availW = constraints.maxWidth;
+                      final availH = constraints.maxHeight;
+
+                      // Allocate space for two cards, plus sign, gaps and connect button/banner
+                      final maxCardW = (availW - 64) / 2;
+                      final maxCardH = availH - 78;
+
+                      final cardW = maxCardW.clamp(200.0, 320.0);
+                      final cardH = maxCardH.clamp(180.0, 285.0);
+
+                      return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Left Word Card
-                          SlideTransition(
-                            position: _leftSlideAnimation,
-                            child: GestureDetector(
-                              onTap: () => _playWord(1),
-                              child: _buildWordCard(
-                                word: current.word1,
-                                image: current.image1,
-                                isPlayed: _isWord1Played,
-                                color: const Color(0xFFE8F5E9),
-                                borderColor: const Color(0xFF4CAF50),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Left Word Card
+                              SlideTransition(
+                                position: _leftSlideAnimation,
+                                child: GestureDetector(
+                                  key: const Key('section16_word1_card'),
+                                  onTap: () => _playWord(1),
+                                  child: _buildWordCard(
+                                    width: cardW,
+                                    height: cardH,
+                                    word: current.word1,
+                                    image: current.image1,
+                                    isPlayed: _isWord1Played,
+                                    color: const Color(0xFFE8F5E9),
+                                    borderColor: const Color(0xFF4CAF50),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
+                              const SizedBox(width: 14),
 
-                          // Plus sign
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-                              ],
-                            ),
-                            child: const Icon(Icons.add_rounded, size: 30, color: Color(0xFF2E7D32)),
-                          ),
-                          const SizedBox(width: 16),
-
-                          // Right Word Card
-                          SlideTransition(
-                            position: _rightSlideAnimation,
-                            child: GestureDetector(
-                              onTap: () => _playWord(2),
-                              child: _buildWordCard(
-                                word: current.word2,
-                                image: current.image2,
-                                isPlayed: _isWord2Played,
-                                color: const Color(0xFFE0F2F1),
-                                borderColor: const Color(0xFF009688),
+                              // Plus sign
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.add_rounded,
+                                  size: 34,
+                                  color: Color(0xFF2E7D32),
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
+                              const SizedBox(width: 14),
 
-                      // Full phrase banner or Connect Button
-                      if (_isCombined)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF9C4),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFFBC02D), width: 3),
-                            boxShadow: const [
-                              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+                              // Right Word Card
+                              SlideTransition(
+                                position: _rightSlideAnimation,
+                                child: GestureDetector(
+                                  key: const Key('section16_word2_card'),
+                                  onTap: () => _playWord(2),
+                                  child: _buildWordCard(
+                                    width: cardW,
+                                    height: cardH,
+                                    word: current.word2,
+                                    image: current.image2,
+                                    isPlayed: _isWord2Played,
+                                    color: const Color(0xFFE0F2F1),
+                                    borderColor: const Color(0xFF009688),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          child: Text(
-                            '«${current.fullPhrase}»',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFE65100),
+                          const SizedBox(height: 12),
+
+                          // Full phrase banner or Connect Button
+                          if (_isCombined)
+                            GestureDetector(
+                              key: const Key('section16_phrase_banner'),
+                              onTap: () {
+                                final isBoy = context.read<AlippeCubit>().state.boyActive;
+                                AlippeAudio().stopSfx();
+                                AlippeAudio().playSfx(current.getSound(isBoy));
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF9C4),
+                                  borderRadius: BorderRadius.circular(22),
+                                  border: Border.all(color: const Color(0xFFFBC02D), width: 3.5),
+                                  boxShadow: const [
+                                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '«${current.fullPhrase}»',
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFE65100),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Icon(Icons.volume_up_rounded, size: 32, color: Color(0xFFE65100)),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            ElevatedButton.icon(
+                              key: const Key('combine_words_button'),
+                              onPressed: _combineWords,
+                              icon: const Icon(Icons.link_rounded, size: 30),
+                              label: const Text(
+                                'Бириктир! ✨',
+                                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2E7D32),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 4,
+                              ),
                             ),
-                          ),
-                        )
-                      else
-                        ElevatedButton.icon(
-                          key: const Key('combine_words_button'),
-                          onPressed: _combineWords,
-                          icon: const Icon(Icons.link_rounded, size: 28),
-                          label: const Text(
-                            'Бириктир! ✨',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            elevation: 4,
-                          ),
-                        ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -325,6 +410,8 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
   }
 
   Widget _buildWordCard({
+    required double width,
+    required double height,
     required String word,
     required String image,
     required bool isPlayed,
@@ -332,38 +419,63 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
     required Color borderColor,
   }) {
     return Container(
-      width: 160,
-      height: 160,
-      padding: const EdgeInsets.all(12),
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor, width: 3),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: borderColor, width: 3.5),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+          BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 5)),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
         children: [
-          Expanded(
-            child: Image.asset(image, fit: BoxFit.contain),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor.withOpacity(0.6)),
-            ),
-            child: Text(
-              word,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: borderColor,
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isPlayed ? borderColor : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 1)),
+                ],
               ),
+              child: Icon(
+                Icons.volume_up_rounded,
+                size: 20,
+                color: isPlayed ? Colors.white : borderColor,
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Image.asset(image, fit: BoxFit.contain),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: borderColor.withOpacity(0.7), width: 2),
+                  ),
+                  child: Text(
+                    word,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: borderColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

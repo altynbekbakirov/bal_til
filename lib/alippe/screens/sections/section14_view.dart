@@ -23,6 +23,8 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
   int _repeatCount = 0;
   Timer? _autoPlayTimer;
   Timer? _transitionTimer;
+  Timer? _speechTimer;
+  Timer? _bellTimer;
 
   late final AnimationController _pulseController;
   late final Animation<double> _pulseAnimation;
@@ -43,7 +45,7 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
       curve: Curves.easeInOut,
     ));
 
-    _autoPlayTimer = Timer(const Duration(milliseconds: 350), () {
+    _autoPlayTimer = Timer(const Duration(milliseconds: 400), () {
       if (mounted) _playSyllable();
     });
   }
@@ -52,6 +54,10 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
   void dispose() {
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
+    _speechTimer?.cancel();
+    _bellTimer?.cancel();
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     _pulseController.dispose();
     super.dispose();
   }
@@ -62,26 +68,52 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
     final current = _items[_currentIndex];
     final isBoy = context.read<AlippeCubit>().state.boyActive;
     final soundAsset = current.getSound(isBoy);
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
+    _speechTimer?.cancel();
+    // Play human syllable recording directly without robotic TTS
     AlippeAudio().playSfx(soundAsset);
-    AlippeTts().speak(current.syllable);
   }
 
   void _onTapRepeat() {
-    setState(() {
-      _repeatCount++;
-    });
-    _playSyllable();
+    if (_repeatCount >= 2) return;
 
-    if (_repeatCount >= 2) {
+    final newCount = _repeatCount + 1;
+    setState(() {
+      _repeatCount = newCount;
+    });
+
+    if (newCount == 1) {
+      AlippeAudio().stopSfx();
+      AlippeTts().stop();
+      // First repetition plays bell sound consistent with games 1-6 intermediate progress
+      AlippeAudio().playBell();
+      _bellTimer?.cancel();
+      _bellTimer = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _playSyllable();
+      });
+    } else if (newCount >= 2) {
+      // Completed repetition for this syllable!
+      _bellTimer?.cancel();
+      _speechTimer?.cancel();
+      AlippeAudio().stopSfx();
+      AlippeTts().stop();
+      // Play good sound on completion consistent with games 1-6
+      AlippeAudio().playGood();
+
       _transitionTimer?.cancel();
-      _transitionTimer = Timer(const Duration(milliseconds: 800), () {
+      // Time pause before proceeding to next round so sounds do not overlap
+      _transitionTimer = Timer(const Duration(milliseconds: 1800), () {
         if (!mounted) return;
         if (_currentIndex < _items.length - 1) {
           setState(() {
             _currentIndex++;
             _repeatCount = 0;
           });
-          _playSyllable();
+          _autoPlayTimer?.cancel();
+          _autoPlayTimer = Timer(const Duration(milliseconds: 400), () {
+            if (mounted) _playSyllable();
+          });
         } else {
           _finishGame();
         }
@@ -90,6 +122,8 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
   }
 
   void _finishGame() {
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     final cubit = context.read<AlippeCubit>();
     cubit.completeSection(14);
     cubit.addScore(8, 3);
@@ -99,14 +133,26 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
       score: 3,
       onRestart: () {
         AlippeAudio().playReset();
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        _autoPlayTimer?.cancel();
+        _transitionTimer?.cancel();
         setState(() {
           _currentIndex = 0;
           _repeatCount = 0;
         });
         _playSyllable();
       },
-      onNext: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
-      onHome: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
+      onNext: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
+      onHome: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
     );
   }
 
@@ -134,6 +180,12 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                     imageAsset: AlippeAssets.sideRestart,
                     onPress: () {
                       AlippeAudio().playReset();
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _speechTimer?.cancel();
+                      _bellTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
                       setState(() {
                         _currentIndex = 0;
                         _repeatCount = 0;
@@ -148,7 +200,15 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                     height: 75,
                     scaleFactor: 1.3,
                     imageAsset: AlippeAssets.sideBack,
-                    onPress: () => Navigator.of(context).pop(),
+                    onPress: () {
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _speechTimer?.cancel();
+                      _bellTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
+                      Navigator.of(context).pop();
+                    },
                   ),
                 ],
               ),
@@ -183,15 +243,22 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                         ),
                       ),
                     ),
-                    const Text(
-                      'Муунду угуп, эки жолу кайтала!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(blurRadius: 4, color: Colors.black54, offset: Offset(1, 1)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
                         ],
+                      ),
+                      child: const Text(
+                        'Муунду угуп, эки жолу кайтала!',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1565C0),
+                        ),
                       ),
                     ),
                   ],
@@ -204,13 +271,13 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                     children: [
                       // Syllable Card
                       Expanded(
-                        flex: 6,
+                        flex: 5,
                         child: GestureDetector(
                           onTap: _onTapRepeat,
                           child: ScaleTransition(
                             scale: _pulseAnimation,
                             child: Container(
-                              margin: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
@@ -233,7 +300,7 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                                   Text(
                                     current.syllable,
                                     style: const TextStyle(
-                                      fontSize: 72,
+                                      fontSize: 76,
                                       fontWeight: FontWeight.w900,
                                       color: Color(0xFF0D47A1),
                                       letterSpacing: 2.0,
@@ -241,16 +308,16 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: const Color(0xFF64B5F6)),
+                                      border: Border.all(color: const Color(0xFF64B5F6), width: 1.5),
                                     ),
                                     child: Text(
                                       'Мисалы: ${current.wordExample}',
                                       style: const TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xFF1976D2),
                                       ),
@@ -265,54 +332,61 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
 
                       const SizedBox(width: 16),
 
-                      // Example illustration & Repeat Counter
+                      // Example illustration & Repeat Counter (Enlarged widgets)
                       Expanded(
                         flex: 5,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              height: 120,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF90CAF9)),
-                                boxShadow: const [
-                                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-                                ],
+                            // Enlarged illustration container
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(color: const Color(0xFF90CAF9), width: 3),
+                                  boxShadow: const [
+                                    BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+                                  ],
+                                ),
+                                child: Image.asset(current.image, fit: BoxFit.contain),
                               ),
-                              child: Image.asset(current.image, fit: BoxFit.contain),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 10),
 
-                            // Repeat progress bubbles
+                            // Enlarged repeat progress bubbles
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _buildBubble(isDone: _repeatCount >= 1, label: '1'),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 24),
                                 _buildBubble(isDone: _repeatCount >= 2, label: '2'),
                               ],
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 10),
 
-                            ElevatedButton.icon(
-                              key: const Key('syllable_repeat_button'),
-                              onPressed: _onTapRepeat,
-                              icon: const Icon(Icons.mic_rounded, size: 28),
-                              label: Text(
-                                _repeatCount == 0 ? 'Кайталап айт!' : 'Дагы бир жолу!',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1976D2),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                            // Enlarged repeat action button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 60,
+                              child: ElevatedButton.icon(
+                                key: const Key('syllable_repeat_button'),
+                                onPressed: _onTapRepeat,
+                                icon: const Icon(Icons.mic_rounded, size: 32),
+                                label: Text(
+                                  _repeatCount == 0 ? 'Кайталап айт!' : 'Дагы бир жолу!',
+                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                                 ),
-                                elevation: 4,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1976D2),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 4,
+                                ),
                               ),
                             ),
                           ],
@@ -332,26 +406,26 @@ class _Section14ViewState extends State<Section14View> with SingleTickerProvider
   Widget _buildBubble({required bool isDone, required String label}) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      width: 44,
-      height: 44,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
         color: isDone ? const Color(0xFF4CAF50) : Colors.white,
         shape: BoxShape.circle,
         border: Border.all(
           color: isDone ? const Color(0xFF2E7D32) : const Color(0xFF90CAF9),
-          width: 2.5,
+          width: 3.5,
         ),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
         ],
       ),
       alignment: Alignment.center,
       child: isDone
-          ? const Icon(Icons.check_rounded, color: Colors.white, size: 26)
+          ? const Icon(Icons.check_rounded, color: Colors.white, size: 34)
           : Text(
               label,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 25,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1976D2),
               ),

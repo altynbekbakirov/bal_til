@@ -23,6 +23,7 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
   bool _hasRepeated = false;
   Timer? _autoPlayTimer;
   Timer? _transitionTimer;
+  Timer? _speechTimer;
 
   late final AnimationController _animController;
   late final Animation<double> _scaleAnimation;
@@ -43,7 +44,7 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
       curve: Curves.easeInOut,
     ));
 
-    _autoPlayTimer = Timer(const Duration(milliseconds: 350), () {
+    _autoPlayTimer = Timer(const Duration(milliseconds: 400), () {
       if (mounted) _playSound();
     });
   }
@@ -52,6 +53,9 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
   void dispose() {
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
+    _speechTimer?.cancel();
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     _animController.dispose();
     super.dispose();
   }
@@ -62,25 +66,42 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
     final current = _items[_currentIndex];
     final isBoy = context.read<AlippeCubit>().state.boyActive;
     final soundAsset = current.getSound(isBoy);
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     AlippeAudio().playSfx(soundAsset);
-    // Also trigger TTS speech as verbal reinforcement
-    AlippeTts().speak(current.soundText);
+    // Play verbal reinforcement after soundAsset without audio overlap
+    _speechTimer?.cancel();
+    _speechTimer = Timer(const Duration(milliseconds: 650), () {
+      if (mounted) AlippeTts().speak(current.soundText);
+    });
   }
 
   void _onRepeatTap() {
+    if (_hasRepeated) return;
+
+    _speechTimer?.cancel();
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
+    // Play good sound on successful repetition consistent with games 1-6
+    AlippeAudio().playGood();
+
     setState(() {
       _hasRepeated = true;
     });
 
     _transitionTimer?.cancel();
-    _transitionTimer = Timer(const Duration(milliseconds: 700), () {
+    // Pause before advancing to next round so sounds do not overlap
+    _transitionTimer = Timer(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
       if (_currentIndex < _items.length - 1) {
         setState(() {
           _currentIndex++;
           _hasRepeated = false;
         });
-        _playSound();
+        _autoPlayTimer?.cancel();
+        _autoPlayTimer = Timer(const Duration(milliseconds: 400), () {
+          if (mounted) _playSound();
+        });
       } else {
         _finishGame();
       }
@@ -88,6 +109,8 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
   }
 
   void _finishGame() {
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     final cubit = context.read<AlippeCubit>();
     cubit.completeSection(13);
     cubit.addScore(7, 3);
@@ -97,14 +120,26 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
       score: 3,
       onRestart: () {
         AlippeAudio().playReset();
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        _autoPlayTimer?.cancel();
+        _transitionTimer?.cancel();
         setState(() {
           _currentIndex = 0;
           _hasRepeated = false;
         });
         _playSound();
       },
-      onNext: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
-      onHome: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
+      onNext: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
+      onHome: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
     );
   }
 
@@ -132,6 +167,11 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
                     imageAsset: AlippeAssets.sideRestart,
                     onPress: () {
                       AlippeAudio().playReset();
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _speechTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
                       setState(() {
                         _currentIndex = 0;
                         _hasRepeated = false;
@@ -146,7 +186,14 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
                     height: 75,
                     scaleFactor: 1.3,
                     imageAsset: AlippeAssets.sideBack,
-                    onPress: () => Navigator.of(context).pop(),
+                    onPress: () {
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _speechTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
+                      Navigator.of(context).pop();
+                    },
                   ),
                 ],
               ),
@@ -325,7 +372,10 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     key: const Key('listen_again_button'),
-                                    onPressed: _playSound,
+                                    onPressed: () {
+                                      AlippeAudio().playTap();
+                                      _playSound();
+                                    },
                                     icon: const Icon(Icons.replay_rounded, size: 24),
                                     label: const Text(
                                       'Дагы угуу',

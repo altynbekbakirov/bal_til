@@ -391,8 +391,17 @@ void main() {
       // Progress text for first question
       expect(find.text('Суроо 1 / 15'), findsOneWidget);
 
-      // Listen button exists
-      expect(find.byKey(const Key('section11_listen_button')), findsOneWidget);
+      // Listen button exists and is large (106x106 with 68px icon)
+      final listenButton = find.byKey(const Key('section11_listen_button'));
+      expect(listenButton, findsOneWidget);
+      final RenderBox buttonBox = tester.renderObject(listenButton);
+      expect(buttonBox.size.width, equals(106.0));
+      expect(buttonBox.size.height, equals(106.0));
+
+      final iconFinder = find.descendant(of: listenButton, matching: find.byIcon(Icons.volume_up_rounded));
+      expect(iconFinder, findsOneWidget);
+      final Icon iconWidget = tester.widget(iconFinder);
+      expect(iconWidget.size, equals(68.0));
 
       // 4 option cards are rendered
       expect(find.byKey(const Key('section11_option_0')), findsOneWidget);
@@ -445,7 +454,7 @@ void main() {
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
       // Wait for delay to advance to next question
-      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pump(const Duration(milliseconds: 1600));
       await tester.pumpAndSettle();
 
       // Successfully advanced to Question 2!
@@ -472,7 +481,7 @@ void main() {
 
       // Answer question 1 correctly
       await tester.tap(find.text('Ат'));
-      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pump(const Duration(milliseconds: 1600));
       await tester.pumpAndSettle();
 
       // Now on Question 2
@@ -540,7 +549,7 @@ void main() {
       for (int i = 0; i < correctWords.length; i++) {
         expect(find.text('Суроо ${i + 1} / 15'), findsOneWidget);
         await tester.tap(find.text(correctWords[i]));
-        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pump(const Duration(milliseconds: 1600));
         if (i < correctWords.length - 1) {
           await tester.pumpAndSettle();
         } else {

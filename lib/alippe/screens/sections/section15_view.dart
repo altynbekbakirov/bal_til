@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/alippe_audio.dart';
@@ -20,11 +21,13 @@ class Section15View extends StatefulWidget {
 class _Section15ViewState extends State<Section15View> {
   late final List<WordGuessItem> _items;
   int _currentIndex = 0;
+  late List<String> _currentOptions;
   String? _selectedOption;
   bool _isSolved = false;
   final Set<String> _wrongOptions = {};
   Timer? _autoPlayTimer;
   Timer? _transitionTimer;
+  Timer? _fullWordTimer;
 
   @override
   void initState() {
@@ -37,26 +40,43 @@ class _Section15ViewState extends State<Section15View> {
   void dispose() {
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
+    _fullWordTimer?.cancel();
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     super.dispose();
   }
 
   void _loadQuestion() {
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
+    _fullWordTimer?.cancel();
     _selectedOption = null;
     _isSolved = false;
     _wrongOptions.clear();
 
-    _autoPlayTimer = Timer(const Duration(milliseconds: 350), () {
+    final current = _items[_currentIndex];
+    // Shuffle options so the right answer is not always in the first place
+    _currentOptions = List<String>.from(current.options)..shuffle(math.Random());
+
+    AlippeTts().stop();
+
+    _autoPlayTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) _playFirstPartPrompt();
     });
   }
 
   void _playFirstPartPrompt() {
-    if (!mounted) return;
+    if (!mounted || _isSolved) return;
+    AlippeTts().stop();
     final current = _items[_currentIndex];
-    // Speak the first syllable prompt, e.g. "Ба"
-    AlippeTts().speak(current.firstPart.replaceAll('-', '').trim());
+    final isBoy = context.read<AlippeCubit>().state.boyActive;
+    final promptSound = current.getPromptSound(isBoy);
+    if (promptSound != null && promptSound.isNotEmpty) {
+      // Play authentic Kyrgyz human recording from assets (e.g. "Ба", "То")
+      AlippeAudio().playSfx(promptSound);
+    } else {
+      AlippeTts().speak(current.firstPart.replaceAll('-', '').trim());
+    }
   }
 
   void _playFullWord() {
@@ -64,8 +84,13 @@ class _Section15ViewState extends State<Section15View> {
     final current = _items[_currentIndex];
     final isBoy = context.read<AlippeCubit>().state.boyActive;
     final sound = current.getSound(isBoy);
-    AlippeAudio().playSfx(sound);
-    AlippeTts().speak(current.fullWord);
+    AlippeTts().stop();
+    // Play the full word sound once (without repeating via TTS)
+    if (sound.isNotEmpty) {
+      AlippeAudio().playSfx(sound);
+    } else {
+      AlippeTts().speak(current.fullWord);
+    }
   }
 
   void _onOptionTap(String option) {
@@ -74,13 +99,24 @@ class _Section15ViewState extends State<Section15View> {
     final current = _items[_currentIndex];
 
     if (option == current.missingPart) {
+      AlippeTts().stop();
+      _fullWordTimer?.cancel();
+      // Play good sound on correct completion consistent with games 1-6
+      AlippeAudio().playGood();
+
       setState(() {
         _isSolved = true;
         _selectedOption = option;
       });
-      _playFullWord();
 
-      _transitionTimer = Timer(const Duration(milliseconds: 1100), () {
+      // Play completed full word once after brief jingle pause without sound overlap
+      _fullWordTimer = Timer(const Duration(milliseconds: 700), () {
+        if (mounted) _playFullWord();
+      });
+
+      _transitionTimer?.cancel();
+      // Time pause before proceeding to next round so sounds do not overlap
+      _transitionTimer = Timer(const Duration(milliseconds: 2400), () {
         if (!mounted) return;
         if (_currentIndex < _items.length - 1) {
           setState(() {
@@ -92,6 +128,8 @@ class _Section15ViewState extends State<Section15View> {
         }
       });
     } else {
+      AlippeTts().stop();
+      // Incorrect answer: play fail sound consistent with games 1-6
       AlippeAudio().playFail();
       setState(() {
         _wrongOptions.add(option);
@@ -100,6 +138,8 @@ class _Section15ViewState extends State<Section15View> {
   }
 
   void _finishGame() {
+    AlippeAudio().stopSfx();
+    AlippeTts().stop();
     final cubit = context.read<AlippeCubit>();
     cubit.completeSection(15);
     cubit.addScore(9, 3);
@@ -109,13 +149,25 @@ class _Section15ViewState extends State<Section15View> {
       score: 3,
       onRestart: () {
         AlippeAudio().playReset();
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        _autoPlayTimer?.cancel();
+        _transitionTimer?.cancel();
         setState(() {
           _currentIndex = 0;
           _loadQuestion();
         });
       },
-      onNext: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
-      onHome: () => AlippeGameFinishDialog.navigateToAlippeHome(context),
+      onNext: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
+      onHome: () {
+        AlippeAudio().stopSfx();
+        AlippeTts().stop();
+        AlippeGameFinishDialog.navigateToAlippeHome(context);
+      },
     );
   }
 
@@ -143,6 +195,11 @@ class _Section15ViewState extends State<Section15View> {
                     imageAsset: AlippeAssets.sideRestart,
                     onPress: () {
                       AlippeAudio().playReset();
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _fullWordTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
                       setState(() {
                         _currentIndex = 0;
                         _loadQuestion();
@@ -156,7 +213,14 @@ class _Section15ViewState extends State<Section15View> {
                     height: 75,
                     scaleFactor: 1.3,
                     imageAsset: AlippeAssets.sideBack,
-                    onPress: () => Navigator.of(context).pop(),
+                    onPress: () {
+                      AlippeAudio().stopSfx();
+                      AlippeTts().stop();
+                      _fullWordTimer?.cancel();
+                      _autoPlayTimer?.cancel();
+                      _transitionTimer?.cancel();
+                      Navigator.of(context).pop();
+                    },
                   ),
                 ],
               ),
@@ -191,15 +255,22 @@ class _Section15ViewState extends State<Section15View> {
                         ),
                       ),
                     ),
-                    const Text(
-                      'Сөздүн уландысын тап!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(blurRadius: 4, color: Colors.black54, offset: Offset(1, 1)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
                         ],
+                      ),
+                      child: const Text(
+                        'Сөздүн уландысын тап!',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFC2185B),
+                        ),
                       ),
                     ),
                   ],
@@ -317,65 +388,85 @@ class _Section15ViewState extends State<Section15View> {
                       // Right: Choices (Syllable bubbles)
                       Expanded(
                         flex: 5,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Туура муунду танда:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            for (final opt in current.options) ...[
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6.0),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  height: 52,
-                                  child: ElevatedButton(
-                                    key: Key('word_guess_opt_$opt'),
-                                    onPressed: _wrongOptions.contains(opt) ? null : () => _onOptionTap(opt),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _selectedOption == opt
-                                          ? const Color(0xFF4CAF50)
-                                          : _wrongOptions.contains(opt)
-                                              ? Colors.grey.shade400
-                                              : Colors.white,
-                                      foregroundColor: _selectedOption == opt
-                                          ? Colors.white
-                                          : const Color(0xFFC2185B),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        side: BorderSide(
-                                          color: _wrongOptions.contains(opt)
-                                              ? Colors.grey
-                                              : const Color(0xFFE91E63),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      elevation: 3,
-                                    ),
-                                    child: Text(
-                                      opt,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: _wrongOptions.contains(opt)
-                                            ? Colors.white70
-                                            : _selectedOption == opt
-                                                ? Colors.white
-                                                : const Color(0xFFC2185B),
-                                      ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final totalH = constraints.maxHeight;
+                            // Dynamically calculate prominent button height and font size
+                            final btnH = ((totalH - 48) / 3.4).clamp(66.0, 92.0);
+                            final vPad = ((totalH - 48 - (btnH * 3)) / 6).clamp(4.0, 10.0);
+                            final fontSize = (btnH * 0.44).clamp(28.0, 38.0);
+
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.95),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFFF06292), width: 1.5),
+                                    boxShadow: const [
+                                      BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    'Туура муунду танда:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFAD1457),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ],
+                                SizedBox(height: vPad + 4),
+                                for (final opt in _currentOptions) ...[
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(vertical: vPad),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      height: btnH,
+                                      child: ElevatedButton(
+                                        key: Key('word_guess_opt_$opt'),
+                                        onPressed: _wrongOptions.contains(opt) ? null : () => _onOptionTap(opt),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: _selectedOption == opt
+                                              ? const Color(0xFF4CAF50)
+                                              : _wrongOptions.contains(opt)
+                                                  ? Colors.grey.shade400
+                                                  : Colors.white,
+                                          foregroundColor: _selectedOption == opt
+                                              ? Colors.white
+                                              : const Color(0xFFC2185B),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(22),
+                                            side: BorderSide(
+                                              color: _wrongOptions.contains(opt)
+                                                  ? Colors.grey
+                                                  : const Color(0xFFE91E63),
+                                              width: 3,
+                                            ),
+                                          ),
+                                          elevation: 4,
+                                        ),
+                                        child: Text(
+                                          opt,
+                                          style: TextStyle(
+                                            fontSize: fontSize,
+                                            fontWeight: FontWeight.bold,
+                                            color: _wrongOptions.contains(opt)
+                                                ? Colors.white70
+                                                : _selectedOption == opt
+                                                    ? Colors.white
+                                                    : const Color(0xFFC2185B),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],

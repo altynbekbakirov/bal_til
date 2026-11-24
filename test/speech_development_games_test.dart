@@ -46,6 +46,34 @@ void main() {
       final s2 = SpeechDevelopmentData.stage2Sounds.first;
       expect(s2.getSound(true), isNotEmpty);
       expect(s2.getSound(false), isNotEmpty);
+
+      // Verify human syllable prompt sounds exist for all Stage 4 items and prompt is 1-2 letters
+      for (final wg in SpeechDevelopmentData.stage4WordGuesses) {
+        expect(wg.firstPart.length, lessThanOrEqualTo(2),
+            reason: '${wg.firstPart} must be at most 2 letters');
+        expect(wg.getPromptSound(true), isNotNull);
+        expect(wg.getPromptSound(true)!, endsWith('.mp3'));
+        expect(wg.getPromptSound(false), isNotNull);
+        expect(wg.getPromptSound(false)!, endsWith('.mp3'));
+      }
+
+      // Verify human syllable sounds exist for all Stage 3 items and syllable is 2 letters
+      for (final syl in SpeechDevelopmentData.stage3Syllables) {
+        expect(syl.syllable.length, equals(2),
+            reason: '${syl.syllable} must be 2 letters');
+        expect(syl.getSound(true), endsWith('.mp3'));
+        expect(syl.getSound(false), endsWith('.mp3'));
+      }
+
+      // Verify original sounds exist for all Stage 5 phrase items
+      for (final p in SpeechDevelopmentData.stage5Phrases) {
+        expect(p.getWord1Sound(true), endsWith('.mp3'));
+        expect(p.getWord1Sound(false), endsWith('.mp3'));
+        expect(p.getWord2Sound(true), endsWith('.mp3'));
+        expect(p.getWord2Sound(false), endsWith('.mp3'));
+        expect(p.getSound(true), endsWith('.mp3'));
+        expect(p.getSound(false), endsWith('.mp3'));
+      }
     });
   });
 
@@ -94,7 +122,15 @@ void main() {
   });
 
   group('Stage 4 (Section15View - Word Completion)', () {
-    testWidgets('Renders puzzle and allows picking options', (tester) async {
+    test('WordGuessItem options have right answers distributed across positions', () {
+      final firstPositions = SpeechDevelopmentData.stage4WordGuesses
+          .where((item) => item.options.first == item.missingPart)
+          .length;
+      // Right answer is not always in the first position across all 10 items
+      expect(firstPositions, lessThan(SpeechDevelopmentData.stage4WordGuesses.length));
+    });
+
+    testWidgets('Renders puzzle, handles wrong tap, and advances on correct option', (tester) async {
       tester.view.physicalSize = const Size(800, 480);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -108,13 +144,29 @@ void main() {
 
       expect(find.textContaining('Сөздү тап: 1/'), findsOneWidget);
 
-      // Tap correct option for first word ("Ба-" -> "лык")
-      final correctOptKey = Key('word_guess_opt_${SpeechDevelopmentData.stage4WordGuesses.first.missingPart}');
-      expect(find.byKey(correctOptKey), findsOneWidget);
+      final firstItem = SpeechDevelopmentData.stage4WordGuesses.first;
+      final wrongOption = firstItem.options.firstWhere((opt) => opt != firstItem.missingPart);
+      final wrongKey = Key('word_guess_opt_$wrongOption');
+      final correctOptKey = Key('word_guess_opt_${firstItem.missingPart}');
 
+      // Tap wrong option first
+      await tester.tap(find.byKey(wrongKey));
+      await tester.pumpAndSettle();
+
+      // Wrong button is now disabled (onPressed is null)
+      final ElevatedButton wrongButton = tester.widget(find.byKey(wrongKey));
+      expect(wrongButton.onPressed, isNull);
+
+      // Now tap correct option ("Ба-" -> "лык")
+      expect(find.byKey(correctOptKey), findsOneWidget);
       await tester.tap(find.byKey(correctOptKey));
       await tester.pump();
       expect(find.textContaining('= Балык!'), findsOneWidget);
+
+      // Advance to Question 2 after transition timer
+      await tester.pump(const Duration(milliseconds: 2500));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Сөздү тап: 2/'), findsOneWidget);
     });
   });
 
@@ -132,11 +184,34 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Сөз айкашы: 1/'), findsOneWidget);
+      expect(find.byKey(const Key('section16_word1_card')), findsOneWidget);
+      expect(find.byKey(const Key('section16_word2_card')), findsOneWidget);
       expect(find.byKey(const Key('combine_words_button')), findsOneWidget);
 
+      // Verify enlarged card size (at least twice the size of original 160x160 cards)
+      final card1Size = tester.getSize(find.byKey(const Key('section16_word1_card')));
+      expect(card1Size.width, greaterThanOrEqualTo(240.0));
+      expect(card1Size.height, greaterThanOrEqualTo(240.0));
+      expect(card1Size.width * card1Size.height, greaterThanOrEqualTo(2 * (160.0 * 160.0)),
+          reason: 'Item area must be at least twice as large as original 160x160 card');
+
+      // Tap word 1 card
+      await tester.tap(find.byKey(const Key('section16_word1_card')));
+      await tester.pump();
+
+      // Tap word 2 card
+      await tester.tap(find.byKey(const Key('section16_word2_card')));
+      await tester.pump();
+
+      // Tap combine words button
       await tester.tap(find.byKey(const Key('combine_words_button')));
       await tester.pump();
-      expect(find.text('«Суу бер»'), findsOneWidget);
+      expect(find.text('«Кызыл гүл»'), findsOneWidget);
+      expect(find.byKey(const Key('section16_phrase_banner')), findsOneWidget);
+
+      // Tap phrase banner to replay sound
+      await tester.tap(find.byKey(const Key('section16_phrase_banner')));
+      await tester.pump();
     });
   });
 

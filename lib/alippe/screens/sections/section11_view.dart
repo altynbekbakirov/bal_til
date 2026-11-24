@@ -43,8 +43,8 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
       duration: const Duration(milliseconds: 600),
     );
     _speakerScaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.15), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.15, end: 1.0), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.12), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.12, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(
       parent: _speakerAnimController,
       curve: Curves.easeInOut,
@@ -58,6 +58,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
     _autoPlayTimer?.cancel();
     _transitionTimer?.cancel();
     _speakerAnimController.dispose();
+    AlippeAudio().stopSfx();
     super.dispose();
   }
 
@@ -74,7 +75,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
     _currentOptions = shuffled;
 
     // Automatically play target sound after short delay
-    _autoPlayTimer = Timer(const Duration(milliseconds: 300), () {
+    _autoPlayTimer = Timer(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       _playTargetSound();
     });
@@ -96,7 +97,9 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
     final option = _currentOptions[index];
 
     if (option.isCorrect) {
-      // Correct answer! (Sound removed for speech training)
+      // Correct answer! Play good sound consistent with games 1-6
+      AlippeAudio().playGood();
+
       setState(() {
         _isAnsweredCorrectly = true;
         _correctOptionIndex = index;
@@ -107,7 +110,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
 
       _isProcessing = true;
       _transitionTimer?.cancel();
-      _transitionTimer = Timer(const Duration(milliseconds: 900), () {
+      _transitionTimer = Timer(const Duration(milliseconds: 1500), () {
         if (!mounted) return;
 
         if (_currentIndex < _questions.length - 1) {
@@ -121,7 +124,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
         }
       });
     } else {
-      // Incorrect answer
+      // Incorrect answer - play fail sound consistent with games 1-6
       AlippeAudio().playFail();
       setState(() {
         _failedOptionIndices.add(index);
@@ -130,6 +133,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
   }
 
   void _finishGame() {
+    AlippeAudio().stopSfx();
     final cubit = context.read<AlippeCubit>();
     cubit.completeSection(11);
     cubit.addScore(6, 3);
@@ -139,6 +143,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
       score: 3,
       onRestart: () {
         AlippeAudio().playReset();
+        AlippeAudio().stopSfx();
         setState(() {
           _currentIndex = 0;
           _firstTryCorrectCount = 0;
@@ -146,9 +151,11 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
         });
       },
       onNext: () {
+        AlippeAudio().stopSfx();
         AlippeGameFinishDialog.navigateToAlippeHome(context);
       },
       onHome: () {
+        AlippeAudio().stopSfx();
         AlippeGameFinishDialog.navigateToAlippeHome(context);
       },
     );
@@ -176,6 +183,9 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
                   imageAsset: AlippeAssets.sideRestart,
                   onPress: () {
                     AlippeAudio().playReset();
+                    AlippeAudio().stopSfx();
+                    _autoPlayTimer?.cancel();
+                    _transitionTimer?.cancel();
                     setState(() {
                       _currentIndex = 0;
                       _firstTryCorrectCount = 0;
@@ -190,7 +200,12 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
                   height: 75,
                   scaleFactor: 1.3,
                   imageAsset: AlippeAssets.sideBack,
-                  onPress: () => Navigator.of(context).pop(),
+                  onPress: () {
+                    AlippeAudio().stopSfx();
+                    _autoPlayTimer?.cancel();
+                    _transitionTimer?.cancel();
+                    Navigator.of(context).pop();
+                  },
                 ),
               ],
             ),
@@ -334,8 +349,8 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
             customBorder: const CircleBorder(),
             onTap: _playTargetSound,
             child: Container(
-              width: 84,
-              height: 84,
+              width: 106,
+              height: 106,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -343,17 +358,17 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
-                border: Border.all(color: Colors.white, width: 3.8),
+                border: Border.all(color: Colors.white, width: 4.5),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x40000000),
-                    blurRadius: 8,
+                    blurRadius: 10,
                     offset: Offset(0, 4),
                   ),
                   BoxShadow(
                     color: Color(0x334CAF50),
-                    blurRadius: 14,
-                    spreadRadius: 2,
+                    blurRadius: 16,
+                    spreadRadius: 3,
                   ),
                 ],
               ),
@@ -361,7 +376,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
                 child: Icon(
                   Icons.volume_up_rounded,
                   color: Colors.white,
-                  size: 54,
+                  size: 68,
                   shadows: [
                     Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
                   ],

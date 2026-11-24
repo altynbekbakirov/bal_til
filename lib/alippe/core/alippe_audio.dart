@@ -87,6 +87,19 @@ class AlippeAudio {
     }
   }
 
+  void stopSfx() {
+    for (final p in _sfxPlayers) {
+      try {
+        p.stop();
+      } catch (_) {}
+    }
+    for (final p in _tapPlayers) {
+      try {
+        p.stop();
+      } catch (_) {}
+    }
+  }
+
   Future<void> pauseMusic() async {
     try {
       await _musicPlayer.pause();
