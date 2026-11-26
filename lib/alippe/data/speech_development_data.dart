@@ -7,9 +7,6 @@ class SoundItem {
   final String girlSound;
   final String description;
   final String category; // 'vowel', 'animal', 'household'
-  /// Real recorded sound of the animal/object (moo, neigh, horn...).
-  /// Played after the spoken word; when null, [soundText] is spoken via TTS.
-  final String? effectSound;
 
   const SoundItem({
     required this.title,
@@ -19,7 +16,6 @@ class SoundItem {
     required this.girlSound,
     required this.description,
     required this.category,
-    this.effectSound,
   });
 
   String getSound(bool isBoy) => isBoy ? boySound : girlSound;
@@ -154,7 +150,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_uy.mp3',
       description: 'Уй кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_cow.m4a',
     ),
     SoundItem(
       title: 'Кой',
@@ -164,7 +159,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_koy.mp3',
       description: 'Кой кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_sheep.m4a',
     ),
     SoundItem(
       title: 'Ат',
@@ -174,7 +168,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_at.mp3',
       description: 'Ат кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_horse.m4a',
     ),
     SoundItem(
       title: 'Балык',
@@ -193,7 +186,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_took.mp3',
       description: 'Тоок кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_hen.m4a',
     ),
     SoundItem(
       title: 'Өрдөк',
@@ -203,7 +195,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_ordok.mp3',
       description: 'Өрдөк кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_duck.m4a',
     ),
     SoundItem(
       title: 'Жөжө',
@@ -213,7 +204,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_jojo.mp3',
       description: 'Жөжө кандай үн чыгарат?',
       category: 'animal',
-      effectSound: 'assets/alippe/audio/sfx/sfx_chick.m4a',
     ),
     SoundItem(
       title: 'Машина',
@@ -223,7 +213,6 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
       description: 'Машинанын сигналы: Би-бип!',
       category: 'household',
-      effectSound: 'assets/alippe/audio/sfx/sfx_car_horn.m4a',
     ),
     SoundItem(
       title: 'А тыбышы',

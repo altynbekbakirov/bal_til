@@ -51,7 +51,6 @@ flutter:
     - assets/images/ui/
     - assets/alippe/audio/
     - assets/alippe/audio/trash/
-    - assets/alippe/audio/sfx/
     - assets/alippe/audio/alippe/
     - assets/alippe/audio/alippe/boy/
     - assets/alippe/audio/alippe/boy/numbers/

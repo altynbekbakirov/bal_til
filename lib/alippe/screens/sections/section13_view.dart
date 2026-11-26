@@ -69,19 +69,11 @@ class _Section13ViewState extends State<Section13View> with SingleTickerProvider
     AlippeAudio().stopSfx();
     AlippeTts().stop();
     AlippeAudio().playSfx(soundAsset);
-    // After the spoken word, play the real animal/object sound when we have a
-    // recording; otherwise fall back to speaking the sound text via TTS.
-    final effect = current.effectSound;
+    // Play verbal reinforcement after soundAsset without audio overlap
     _speechTimer?.cancel();
-    if (effect != null) {
-      _speechTimer = Timer(const Duration(milliseconds: 1100), () {
-        if (mounted) AlippeAudio().playSfx(effect);
-      });
-    } else {
-      _speechTimer = Timer(const Duration(milliseconds: 650), () {
-        if (mounted) AlippeTts().speak(current.soundText);
-      });
-    }
+    _speechTimer = Timer(const Duration(milliseconds: 650), () {
+      if (mounted) AlippeTts().speak(current.soundText);
+    });
   }
 
   void _onRepeatTap() {
