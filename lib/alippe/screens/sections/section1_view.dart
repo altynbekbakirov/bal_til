@@ -128,7 +128,7 @@ class _Section1ViewState extends State<Section1View> {
                 });
               },
               onNext: () {
-                Navigator.of(context).pushReplacementNamed('/section', arguments: 2);
+                AlippeGameFinishDialog.goToNextSection(context, 1);
               },
               onHome: () {
                 AlippeGameFinishDialog.navigateToAlippeHome(context);

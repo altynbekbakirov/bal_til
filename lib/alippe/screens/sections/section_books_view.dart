@@ -85,8 +85,7 @@ class _SectionBooksViewState extends State<SectionBooksView> {
           });
         },
         onNext: () {
-          final nextSec = widget.sectionId + 1;
-          Navigator.of(context).pushReplacementNamed('/section', arguments: nextSec);
+          AlippeGameFinishDialog.goToNextSection(context, widget.sectionId);
         },
         onHome: () {
           AlippeGameFinishDialog.navigateToAlippeHome(context);

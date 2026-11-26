@@ -68,10 +68,10 @@ class _Section17ViewState extends State<Section17View> with SingleTickerProvider
     final sound = current.getSound(isBoy);
     AlippeAudio().stopSfx();
     AlippeTts().stop();
-    AlippeAudio().playSfx(sound);
+    if (sound != null) AlippeAudio().playSfx(sound);
     // Verbal sentence pronunciation after audio without overlap
     _speechTimer?.cancel();
-    _speechTimer = Timer(const Duration(milliseconds: 650), () {
+    _speechTimer = Timer(Duration(milliseconds: sound != null ? 650 : 0), () {
       if (mounted) AlippeTts().speak(current.sentence);
     });
   }
@@ -176,7 +176,7 @@ class _Section17ViewState extends State<Section17View> with SingleTickerProvider
         AlippeTts().stop();
         _speechTimer?.cancel();
         _pecsTimer?.cancel();
-        AlippeGameFinishDialog.navigateToAlippeHome(context);
+        AlippeGameFinishDialog.goToNextSection(context, 17);
       },
       onHome: () {
         AlippeAudio().stopSfx();

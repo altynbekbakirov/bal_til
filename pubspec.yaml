@@ -51,6 +51,7 @@ flutter:
     - assets/images/ui/
     - assets/alippe/audio/
     - assets/alippe/audio/trash/
+    - assets/alippe/audio/sfx/
     - assets/alippe/audio/alippe/
     - assets/alippe/audio/alippe/boy/
     - assets/alippe/audio/alippe/boy/numbers/
@@ -66,6 +67,7 @@ flutter:
     - assets/alippe/audio/alippe/girl/measures/
     - assets/alippe/images/
     - assets/alippe/images/bg/
+    - assets/alippe/images/speech/
     - assets/alippe/images/books/book1/
     - assets/alippe/images/books/book1/section1/
     - assets/alippe/images/books/book1/section1/1/

@@ -288,6 +288,25 @@ class AlippeData {
     }
   }
 
+  /// Returns the section the "Play" button on the finish dialog should open
+  /// after [sectionId] is completed:
+  /// - stage 1 of a two-stage game -> stage 2 of the same game;
+  /// - the last stage of a game -> the first stage of the next game;
+  /// - the last game (or a "coming soon" next game) -> null (go to home).
+  static int? nextSectionAfter(int sectionId) {
+    final bookId = getBookIdForSection(sectionId);
+    if (bookId < 0 || bookId >= books.length) return null;
+    final book = books[bookId];
+    if (sectionId == book.section1Id && book.section2Id != null) {
+      return book.section2Id;
+    }
+    final nextBookId = bookId + 1;
+    if (nextBookId >= books.length) return null;
+    final nextBook = books[nextBookId];
+    if (nextBook.isComingSoon) return null;
+    return nextBook.section1Id;
+  }
+
   static int getBookIdForSection(int sectionId) {
     if (sectionId <= 1) return 0;
     if (sectionId <= 3) return 1;

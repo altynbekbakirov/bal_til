@@ -151,7 +151,7 @@ class _Section16ViewState extends State<Section16View> with SingleTickerProvider
       },
       onNext: () {
         AlippeAudio().stopSfx();
-        AlippeGameFinishDialog.navigateToAlippeHome(context);
+        AlippeGameFinishDialog.goToNextSection(context, 16);
       },
       onHome: () {
         AlippeAudio().stopSfx();

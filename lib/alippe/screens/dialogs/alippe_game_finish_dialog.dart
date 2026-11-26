@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../configs/routes.dart';
 import '../../core/alippe_audio.dart';
 import '../../core/alippe_constants.dart';
+import '../../data/alippe_data.dart';
 import '../../widgets/alippe_anim_button.dart';
 
 class AlippeGameFinishDialog extends StatefulWidget {
@@ -31,6 +32,38 @@ class AlippeGameFinishDialog extends StatefulWidget {
     if (!foundHome) {
       Navigator.of(context).pushReplacementNamed('/home');
     }
+  }
+
+  /// Opens the next stage/game after [sectionId] (see
+  /// [AlippeData.nextSectionAfter]). Within the same game the current stage is
+  /// replaced by the next one; when moving to another game the navigation
+  /// stack is rebuilt as home -> (book) -> section so "Back" leads to the
+  /// right place. After the last game it returns to the Alippe home screen.
+  static void goToNextSection(BuildContext context, int sectionId) {
+    final nextSectionId = AlippeData.nextSectionAfter(sectionId);
+    if (nextSectionId == null) {
+      navigateToAlippeHome(context);
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    final currentBookId = AlippeData.getBookIdForSection(sectionId);
+    final nextBookId = AlippeData.getBookIdForSection(nextSectionId);
+
+    if (currentBookId == nextBookId) {
+      navigator.pushReplacementNamed('/section', arguments: nextSectionId);
+      return;
+    }
+
+    navigator.popUntil((route) =>
+        route.settings.name == '/home' ||
+        route.settings.name == Routers.alippeHome ||
+        route.isFirst);
+    final nextBook = AlippeData.books[nextBookId];
+    if (nextBook.section2Id != null) {
+      navigator.pushNamed('/book', arguments: nextBookId);
+    }
+    navigator.pushNamed('/section', arguments: nextSectionId);
   }
 
   static Future<void> show({

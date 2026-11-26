@@ -47,20 +47,21 @@ void main() {
       expect(s2.getSound(true), isNotEmpty);
       expect(s2.getSound(false), isNotEmpty);
 
-      // Verify human syllable prompt sounds exist for all Stage 4 items and prompt is 1-2 letters
+      // Verify human syllable prompt sounds exist for all Stage 4 items and prompt is 1-3 letters
+      // (e.g. 'Дар' in Дар-быз, matching the recorded syllable audio)
       for (final wg in SpeechDevelopmentData.stage4WordGuesses) {
-        expect(wg.firstPart.length, lessThanOrEqualTo(2),
-            reason: '${wg.firstPart} must be at most 2 letters');
+        expect(wg.firstPart.length, lessThanOrEqualTo(3),
+            reason: '${wg.firstPart} must be at most 3 letters');
         expect(wg.getPromptSound(true), isNotNull);
         expect(wg.getPromptSound(true)!, endsWith('.mp3'));
         expect(wg.getPromptSound(false), isNotNull);
         expect(wg.getPromptSound(false)!, endsWith('.mp3'));
       }
 
-      // Verify human syllable sounds exist for all Stage 3 items and syllable is 2 letters
+      // Verify human syllable sounds exist for all Stage 3 items and syllable is 2-3 letters
       for (final syl in SpeechDevelopmentData.stage3Syllables) {
-        expect(syl.syllable.length, equals(2),
-            reason: '${syl.syllable} must be 2 letters');
+        expect(syl.syllable.length, inInclusiveRange(2, 3),
+            reason: '${syl.syllable} must be 2-3 letters');
         expect(syl.getSound(true), endsWith('.mp3'));
         expect(syl.getSound(false), endsWith('.mp3'));
       }

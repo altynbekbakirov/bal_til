@@ -91,7 +91,7 @@ class _Section8ViewState extends State<Section8View> {
               });
             },
             onNext: () {
-              Navigator.of(context).pushReplacementNamed('/section', arguments: 9);
+              AlippeGameFinishDialog.goToNextSection(context, 8);
             },
             onHome: () {
               AlippeGameFinishDialog.navigateToAlippeHome(context);

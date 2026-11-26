@@ -1,5 +1,3 @@
-import '../core/alippe_cubit.dart';
-
 /// 2-этап: Үн чыгаруу (Үндүү тыбыштар, жаныбарлардын үндөрү жана жөнөкөй үндөр)
 class SoundItem {
   final String title;
@@ -9,6 +7,9 @@ class SoundItem {
   final String girlSound;
   final String description;
   final String category; // 'vowel', 'animal', 'household'
+  /// Real recorded sound of the animal/object (moo, neigh, horn...).
+  /// Played after the spoken word; when null, [soundText] is spoken via TTS.
+  final String? effectSound;
 
   const SoundItem({
     required this.title,
@@ -18,6 +19,7 @@ class SoundItem {
     required this.girlSound,
     required this.description,
     required this.category,
+    this.effectSound,
   });
 
   String getSound(bool isBoy) => isBoy ? boySound : girlSound;
@@ -109,25 +111,27 @@ class SentenceItem {
   final String sentence;
   final String image;
   final String situation;
-  final String boySound;
-  final String girlSound;
+  /// Recorded key-word audio played before the sentence is spoken.
+  /// Null when there is no matching recording (only the sentence is spoken).
+  final String? boySound;
+  final String? girlSound;
 
   const SentenceItem({
     required this.sentence,
     required this.image,
     required this.situation,
-    required this.boySound,
-    required this.girlSound,
+    this.boySound,
+    this.girlSound,
   });
 
-  String getSound(bool isBoy) => isBoy ? boySound : girlSound;
+  String? getSound(bool isBoy) => isBoy ? boySound : girlSound;
 }
 
 class PecsCardItem {
   final String id;
   final String label;
   final String image;
-  final String category; // 'need', 'action', 'feeling', 'people'
+  final String category; // 'need' (food/drink), 'action', 'object'
   final String speechText;
 
   const PecsCardItem({
@@ -150,6 +154,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_uy.mp3',
       description: 'Уй кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_cow.m4a',
     ),
     SoundItem(
       title: 'Кой',
@@ -159,6 +164,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_koy.mp3',
       description: 'Кой кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_sheep.m4a',
     ),
     SoundItem(
       title: 'Ат',
@@ -168,6 +174,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_at.mp3',
       description: 'Ат кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_horse.m4a',
     ),
     SoundItem(
       title: 'Балык',
@@ -186,6 +193,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_took.mp3',
       description: 'Тоок кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_hen.m4a',
     ),
     SoundItem(
       title: 'Өрдөк',
@@ -195,6 +203,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_ordok.mp3',
       description: 'Өрдөк кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_duck.m4a',
     ),
     SoundItem(
       title: 'Жөжө',
@@ -204,6 +213,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_jojo.mp3',
       description: 'Жөжө кандай үн чыгарат?',
       category: 'animal',
+      effectSound: 'assets/alippe/audio/sfx/sfx_chick.m4a',
     ),
     SoundItem(
       title: 'Машина',
@@ -213,6 +223,7 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_mashina.mp3',
       description: 'Машинанын сигналы: Би-бип!',
       category: 'household',
+      effectSound: 'assets/alippe/audio/sfx/sfx_car_horn.m4a',
     ),
     SoundItem(
       title: 'А тыбышы',
@@ -281,18 +292,18 @@ class SpeechDevelopmentData {
       girlSound: 'assets/alippe/audio/alippe/girl/g_syl_be.mp3',
     ),
     SyllableItem(
-      syllable: 'ДА',
+      syllable: 'ДАР',
       wordExample: 'Дар-быз',
       image: 'assets/alippe/images/books/book1/section1/5/pic1.png',
       boySound: 'assets/alippe/audio/alippe/boy/boy_syl_dar.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_syl_dar.mp3',
     ),
     SyllableItem(
-      syllable: 'ҮК',
-      wordExample: 'Ү-кү',
-      image: 'assets/alippe/images/books/book1/section1/24/pic1.png',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_uk.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_uk.mp3',
+      syllable: 'КО',
+      wordExample: 'Ко-ён',
+      image: 'assets/alippe/images/books/book1/section1/7/pic2.png',
+      boySound: 'assets/alippe/audio/alippe/boy/boy_syl_ko.mp3',
+      girlSound: 'assets/alippe/audio/alippe/girl/g_syl_ko.mp3',
     ),
     SyllableItem(
       syllable: 'СА',
@@ -328,11 +339,11 @@ class SpeechDevelopmentData {
       girlPromptSound: 'assets/alippe/audio/alippe/girl/g_syl_be.mp3',
     ),
     WordGuessItem(
-      firstPart: 'Да',
-      missingPart: 'рбыз',
+      firstPart: 'Дар',
+      missingPart: 'быз',
       fullWord: 'Дарбыз',
       image: 'assets/alippe/images/books/book1/section1/5/pic1.png',
-      options: ['сык', 'рбыз', 'мак'],
+      options: ['сык', 'быз', 'мак'],
       boySound: 'assets/alippe/audio/alippe/boy/boy_darbyz.mp3',
       girlSound: 'assets/alippe/audio/alippe/girl/g_darbyz.mp3',
       boyPromptSound: 'assets/alippe/audio/alippe/boy/boy_syl_dar.mp3',
@@ -503,10 +514,8 @@ class SpeechDevelopmentData {
   static const List<SentenceItem> stage6Sentences = [
     SentenceItem(
       sentence: 'Мен суу ичем.',
-      image: 'assets/images/map/lake_cropped.png',
+      image: 'assets/alippe/images/speech/suu.png',
       situation: 'Суусаганда эмне дейбиз?',
-      boySound: 'assets/alippe/audio/alippe/boy/boy_S.mp3',
-      girlSound: 'assets/alippe/audio/alippe/girl/g_S.mp3',
     ),
     SentenceItem(
       sentence: 'Машина тез жүрөт.',
@@ -550,7 +559,7 @@ class SpeechDevelopmentData {
     PecsCardItem(
       id: 'suu',
       label: 'Суу',
-      image: 'assets/images/map/lake_cropped.png',
+      image: 'assets/alippe/images/speech/suu.png',
       category: 'need',
       speechText: 'Суу',
     ),
@@ -562,7 +571,7 @@ class SpeechDevelopmentData {
       speechText: 'Бер',
     ),
     PecsCardItem(
-      id: 'tamak',
+      id: 'nan',
       label: 'Нан',
       image: 'assets/alippe/images/books/book1/section1/15/pic1.png',
       category: 'need',
@@ -572,28 +581,28 @@ class SpeechDevelopmentData {
       id: 'top',
       label: 'Топ',
       image: 'assets/alippe/images/books/book1/section1/19/pic2.png',
-      category: 'action',
+      category: 'object',
       speechText: 'Топ',
     ),
     PecsCardItem(
       id: 'mashina',
       label: 'Машина',
       image: 'assets/alippe/images/books/book1/section1/14/pic2.png',
-      category: 'action',
+      category: 'object',
       speechText: 'Машина',
     ),
     PecsCardItem(
       id: 'belek',
       label: 'Белек',
       image: 'assets/alippe/images/books/book1/section1/2/pic1.png',
-      category: 'need',
+      category: 'object',
       speechText: 'Белек',
     ),
     PecsCardItem(
       id: 'balyk',
       label: 'Балык',
       image: 'assets/alippe/images/books/book1/section1/2/pic2.png',
-      category: 'need',
+      category: 'object',
       speechText: 'Балык',
     ),
     PecsCardItem(
@@ -607,14 +616,14 @@ class SpeechDevelopmentData {
       id: 'at',
       label: 'Ат',
       image: 'assets/alippe/images/books/book1/section1/1/pic1.png',
-      category: 'need',
+      category: 'object',
       speechText: 'Ат',
     ),
     PecsCardItem(
       id: 'took',
       label: 'Тоок',
       image: 'assets/alippe/images/books/book1/section1/22/pic2.png',
-      category: 'need',
+      category: 'object',
       speechText: 'Тоок',
     ),
   ];

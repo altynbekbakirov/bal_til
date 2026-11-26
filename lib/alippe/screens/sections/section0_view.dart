@@ -39,8 +39,7 @@ class _Section0ViewState extends State<Section0View> {
           });
         },
         onNext: () {
-          // Open section 1
-          Navigator.of(context).pushReplacementNamed('/section', arguments: 1);
+          AlippeGameFinishDialog.goToNextSection(context, 0);
         },
         onHome: () {
           AlippeGameFinishDialog.navigateToAlippeHome(context);

@@ -152,7 +152,7 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
       },
       onNext: () {
         AlippeAudio().stopSfx();
-        AlippeGameFinishDialog.navigateToAlippeHome(context);
+        AlippeGameFinishDialog.goToNextSection(context, 11);
       },
       onHome: () {
         AlippeAudio().stopSfx();
@@ -339,6 +339,9 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
   }
 
   Widget _buildListenButton() {
+    // Large, screen-relative listen button (was a fixed 106px).
+    final buttonSize =
+        (MediaQuery.of(context).size.height * 0.3).clamp(120.0, 170.0);
     return Center(
       child: ScaleTransition(
         scale: _speakerScaleAnimation,
@@ -349,8 +352,8 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
             customBorder: const CircleBorder(),
             onTap: _playTargetSound,
             child: Container(
-              width: 106,
-              height: 106,
+              width: buttonSize,
+              height: buttonSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: const LinearGradient(
@@ -372,11 +375,11 @@ class _Section11ViewState extends State<Section11View> with SingleTickerProvider
                   ),
                 ],
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.volume_up_rounded,
                   color: Colors.white,
-                  size: 68,
+                  size: buttonSize * 0.64,
                   shadows: [
                     Shadow(color: Colors.black38, blurRadius: 4, offset: Offset(0, 2)),
                   ],

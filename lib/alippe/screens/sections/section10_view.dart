@@ -153,11 +153,7 @@ class _Section10ViewState extends State<Section10View> {
                     });
                   },
                   onNext: () {
-                    if (isBookComplete) {
-                      Navigator.of(context).pushReplacementNamed('/section', arguments: 11);
-                    } else {
-                      Navigator.of(context).pushReplacementNamed('/section', arguments: 12);
-                    }
+                    AlippeGameFinishDialog.goToNextSection(context, 10);
                   },
                   onHome: () {
                     AlippeGameFinishDialog.navigateToAlippeHome(context);
@@ -182,7 +178,7 @@ class _Section10ViewState extends State<Section10View> {
                     });
                   },
                   onNext: () {
-                    Navigator.of(context).pushReplacementNamed('/section', arguments: 11);
+                    AlippeGameFinishDialog.goToNextSection(context, 12);
                   },
                   onHome: () {
                     AlippeGameFinishDialog.navigateToAlippeHome(context);

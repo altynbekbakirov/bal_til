@@ -391,17 +391,17 @@ void main() {
       // Progress text for first question
       expect(find.text('Суроо 1 / 15'), findsOneWidget);
 
-      // Listen button exists and is large (106x106 with 68px icon)
+      // Listen button exists and is large (min 120x120, scales with screen height)
       final listenButton = find.byKey(const Key('section11_listen_button'));
       expect(listenButton, findsOneWidget);
       final RenderBox buttonBox = tester.renderObject(listenButton);
-      expect(buttonBox.size.width, equals(106.0));
-      expect(buttonBox.size.height, equals(106.0));
+      expect(buttonBox.size.width, greaterThanOrEqualTo(120.0));
+      expect(buttonBox.size.height, greaterThanOrEqualTo(120.0));
 
       final iconFinder = find.descendant(of: listenButton, matching: find.byIcon(Icons.volume_up_rounded));
       expect(iconFinder, findsOneWidget);
       final Icon iconWidget = tester.widget(iconFinder);
-      expect(iconWidget.size, equals(68.0));
+      expect(iconWidget.size, greaterThanOrEqualTo(76.0));
 
       // 4 option cards are rendered
       expect(find.byKey(const Key('section11_option_0')), findsOneWidget);

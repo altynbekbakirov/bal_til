@@ -161,7 +161,7 @@ class _Section15ViewState extends State<Section15View> {
       onNext: () {
         AlippeAudio().stopSfx();
         AlippeTts().stop();
-        AlippeGameFinishDialog.navigateToAlippeHome(context);
+        AlippeGameFinishDialog.goToNextSection(context, 15);
       },
       onHome: () {
         AlippeAudio().stopSfx();
